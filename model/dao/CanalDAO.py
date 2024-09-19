@@ -51,20 +51,18 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT Codigo_Canal, Etiqueta, ID_Fuente 
+                SELECT Codigo_Canal, Etiqueta
                 FROM Canal
                 WHERE Codigo_Canal = ?;
             """
             cur = conn.cursor()
-            cur.execute(sql, (str(canalVO.id),))
+            cur.execute(sql, (str(canalVO.getId()),))
             registro = cur.fetchone()
 
             if registro:
-                fuente = self.fuenteDAO.getFuente(registro[2]) if registro[2] else None
                 self.resultadoUnCanal = CanalVO(
                     pId=registro[0],
-                    pEtiqueta=registro[1],
-                    pFuente=fuente
+                    pEtiqueta=registro[1]
                 )
             else:
                 self.resultadoUnCanal = None
