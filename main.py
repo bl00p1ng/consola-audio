@@ -26,8 +26,8 @@ def mostrar_configuracion_usuario(id_usuario):
 
     for config in configuraciones:
         print(f"\n{'-'*50}")
-        print(f"Configuración ID: {config.ID}")
-        print(f"Fecha: {config.Fecha}")
+        print(f"Configuración ID: {config.getID()}")
+        print(f"Fecha: {config.getFecha()}")
         print(f"{'-'*50}")
 
         # Mostrar detalles de la interfaz de audio
@@ -52,8 +52,8 @@ def mostrar_configuracion_usuario(id_usuario):
         # Mostrar entradas
         print(f"\nEntradas:")
         for entrada in config.getEntradas():
-            print(f"  Dispositivo: {entrada.Nombre}")
-            print(f"    Descripción: {entrada.Descripcion}")
+            print(f"  Dispositivo: {entrada.dispositivo.Nombre}")
+            print(f"    Descripción: {entrada.dispositivo.Descripcion}")
 
         print(f"\n{'='*50}\n")
 
@@ -69,7 +69,6 @@ if __name__ == "__main__":
         print("Error: El ID de usuario debe ser un número entero.")
         sys.exit(1)
     except Exception as e:
-        # print(f"Error inesperado: {e}")
-        # sys.exit(1)
-        # imprimir el error completo con su traza
-        raise
+        print(f"Error inesperado: {e}")
+        sys.exit(1)
+        
