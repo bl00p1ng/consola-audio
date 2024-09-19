@@ -12,16 +12,14 @@ class FuenteDAO:
 
     def getAll(self) -> List[FuenteVO]:
         """
-        Obtiene todas las fuentes de la base de datos.
-        
-        Returns:
-            List[FuenteVO]: Lista con todas las fuentes disponibles.
+        Obtiene todas las fuentes de la base de datos, incluyendo su tipo asociado.
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT f.ID_Fuente, f.ID_Tipo, t.Nombre, t.Descripcion 
+                SELECT f.ID_Fuente, t.ID_Tipo, t.Nombre, t.Descripcion 
                 FROM Fuente f
-                JOIN Tipo t ON f.ID_Tipo = t.ID_Tipo;
+                LEFT JOIN Clasifica c ON f.ID_Fuente = c.ID_Fuente
+                LEFT JOIN Tipo t ON c.ID_Tipo = t.ID_Tipo;
             """
             cur = conn.cursor()
             cur.execute(sql)
@@ -29,7 +27,7 @@ class FuenteDAO:
 
             self.todasLasFuentes.clear()
             for registro in registros:
-                tipo = TipoVO(pId=registro[1], pNombre=registro[2], pDescripcion=registro[3])
+                tipo = TipoVO(pId=registro[1], pNombre=registro[2], pDescripcion=registro[3]) if registro[1] else None
                 self.todasLasFuentes.append(
                     FuenteVO(
                         pId=registro[0],
@@ -40,19 +38,14 @@ class FuenteDAO:
 
     def getFuente(self, fuenteVO: FuenteVO) -> Optional[FuenteVO]:
         """
-        Obtiene una fuente específica de la base de datos.
-        
-        Args:
-            fuenteVO (FuenteVO): Value Object de la fuente a buscar.
-        
-        Returns:
-            Optional[FuenteVO]: La fuente encontrada o None si no existe.
+        Obtiene una fuente específica de la base de datos, incluyendo su tipo.
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT f.ID_Fuente, f.ID_Tipo, t.Nombre, t.Descripcion 
+                SELECT f.ID_Fuente, t.ID_Tipo, t.Nombre, t.Descripcion 
                 FROM Fuente f
-                JOIN Tipo t ON f.ID_Tipo = t.ID_Tipo
+                LEFT JOIN Clasifica c ON f.ID_Fuente = c.ID_Fuente
+                LEFT JOIN Tipo t ON c.ID_Tipo = t.ID_Tipo
                 WHERE f.ID_Fuente = ?;
             """
             cur = conn.cursor()
@@ -60,7 +53,7 @@ class FuenteDAO:
             registro = cur.fetchone()
 
             if registro:
-                tipo = TipoVO(pId=registro[1], pNombre=registro[2], pDescripcion=registro[3])
+                tipo = TipoVO(pId=registro[1], pNombre=registro[2], pDescripcion=registro[3]) if registro[1] else None
                 self.resultadoUnaFuente = FuenteVO(
                     pId=registro[0],
                     pTipo=tipo
@@ -72,63 +65,74 @@ class FuenteDAO:
 
     def insertFuente(self, fuenteVO: FuenteVO) -> bool:
         """
-        Inserta una nueva fuente en la base de datos.
-        
-        Args:
-            fuenteVO (FuenteVO): Value Object de la fuente a insertar.
-        
-        Returns:
-            bool: True si la inserción fue exitosa, False en caso contrario.
+        Inserta una nueva fuente en la base de datos y establece su relación con un tipo.
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "INSERT INTO Fuente (ID_Tipo) VALUES (?);"
                 cur = conn.cursor()
-                cur.execute(sql, (fuenteVO.tipo.id,))
+                
+                # Insertar la fuente
+                sql_fuente = "INSERT INTO Fuente (ID_Fuente) VALUES (NULL);"
+                cur.execute(sql_fuente)
+                id_fuente = cur.lastrowid
+
+                # Si hay un tipo asociado, insertar la relación en Clasifica
+                if fuenteVO.tipo:
+                    sql_clasifica = "INSERT INTO Clasifica (ID_Fuente, ID_Tipo) VALUES (?, ?);"
+                    cur.execute(sql_clasifica, (id_fuente, fuenteVO.tipo.id))
+
                 conn.commit()
                 return True
         except Exception as e:
             print(f"Error al insertar fuente: {e}")
             return False
 
+
     def updateFuente(self, fuenteVO: FuenteVO) -> bool:
         """
-        Actualiza una fuente existente en la base de datos.
-        
-        Args:
-            fuenteVO (FuenteVO): Value Object de la fuente a actualizar.
-        
-        Returns:
-            bool: True si la actualización fue exitosa, False en caso contrario.
+        Actualiza una fuente existente en la base de datos y su relación con un tipo.
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "UPDATE Fuente SET ID_Tipo = ? WHERE ID_Fuente = ?;"
                 cur = conn.cursor()
-                cur.execute(sql, (fuenteVO.tipo.id, str(fuenteVO.id)))
+                
+                # Actualizar la relación en Clasifica
+                if fuenteVO.tipo:
+                    sql_clasifica = """
+                        INSERT OR REPLACE INTO Clasifica (ID_Fuente, ID_Tipo) 
+                        VALUES (?, ?);
+                    """
+                    cur.execute(sql_clasifica, (fuenteVO.id, fuenteVO.tipo.id))
+                else:
+                    # Si no hay tipo, eliminar la relación si existía
+                    sql_delete_clasifica = "DELETE FROM Clasifica WHERE ID_Fuente = ?;"
+                    cur.execute(sql_delete_clasifica, (fuenteVO.id,))
+
                 conn.commit()
-                return cur.rowcount > 0
+                return True
         except Exception as e:
             print(f"Error al actualizar fuente: {e}")
             return False
 
+
     def deleteFuente(self, fuenteVO: FuenteVO) -> bool:
         """
-        Elimina una fuente de la base de datos.
-        
-        Args:
-            fuenteVO (FuenteVO): Value Object de la fuente a eliminar.
-        
-        Returns:
-            bool: True si la eliminación fue exitosa, False en caso contrario.
+        Elimina una fuente de la base de datos y sus relaciones asociadas.
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "DELETE FROM Fuente WHERE ID_Fuente = ?;"
                 cur = conn.cursor()
-                cur.execute(sql, (str(fuenteVO.id),))
+                
+                # Eliminar relaciones en Clasifica
+                sql_delete_clasifica = "DELETE FROM Clasifica WHERE ID_Fuente = ?;"
+                cur.execute(sql_delete_clasifica, (fuenteVO.id,))
+                
+                # Eliminar la fuente
+                sql_delete_fuente = "DELETE FROM Fuente WHERE ID_Fuente = ?;"
+                cur.execute(sql_delete_fuente, (fuenteVO.id,))
+                
                 conn.commit()
-                return cur.rowcount > 0
+                return True
         except Exception as e:
             print(f"Error al eliminar fuente: {e}")
             return False
@@ -143,22 +147,25 @@ class FuenteDAO:
         Returns:
             List[FuenteVO]: Lista de fuentes asociadas al tipo.
         """
+        fuentes = []
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT f.ID_Fuente, f.ID_Tipo 
+                SELECT f.ID_Fuente, t.ID_Tipo, t.Nombre, t.Descripcion 
                 FROM Fuente f
-                WHERE f.ID_Tipo = ?;
+                JOIN Clasifica c ON f.ID_Fuente = c.ID_Fuente
+                JOIN Tipo t ON c.ID_Tipo = t.ID_Tipo
+                WHERE t.ID_Tipo = ?;
             """
             cur = conn.cursor()
             cur.execute(sql, (str(tipoVO.id),))
             registros = cur.fetchall()
 
-            fuentes = []
             for registro in registros:
-                fuentes.append(
-                    FuenteVO(
-                        pId=registro[0],
-                        pTipo=tipoVO
-                    )
+                tipo = TipoVO(pId=registro[1], pNombre=registro[2], pDescripcion=registro[3])
+                fuente = FuenteVO(
+                    pId=registro[0],
+                    pTipo=tipo
                 )
+                fuentes.append(fuente)
+
         return fuentes
