@@ -55,10 +55,10 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT c.Codigo_Canal, c.Etiqueta, c.Volumen, c.Link, c.Mute, c.Solo, c.ID_Fuente 
-                FROM Canal c
-                LEFT JOIN Fuente f ON c.ID_Fuente = f.ID_Fuente
-                WHERE c.Codigo_Canal = ?;
+                SELECT Codigo_Canal, Etiqueta, Volumen, Link, Mute, Solo, ID_Fuente 
+                FROM Canal
+                LEFT JOIN Fuente ON ID_Fuente = ID_Fuente
+                WHERE Codigo_Canal = ?;
             """
             cur = conn.cursor()
             cur.execute(sql, (str(canalVO.id),))
