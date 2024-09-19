@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from model.vo.UsuarioVO import UsuarioVO
 from model.vo.InterfazAudioVO import InterfazAudioVO
+from model.vo.canalVO import CanalVO
+from model.vo.EntradaVO import EntradaVO
 
 class ConfiguracionVO:
     def __init__(self, ID: int = -1, Fecha: datetime = datetime.now(), 
@@ -21,8 +23,7 @@ class ConfiguracionVO:
         self.__Usuario = Usuario
         self.__Interfaz = Interfaz
 
-    @property
-    def ID(self) -> int:
+    def getID(self) -> int:
         """
         Obtiene el ID de la configuración.
 
@@ -31,8 +32,7 @@ class ConfiguracionVO:
         """
         return self.__ID
 
-    @property
-    def Fecha(self) -> datetime:
+    def getFecha(self) -> datetime:
         """
         Obtiene la fecha de la configuración.
 
@@ -41,8 +41,7 @@ class ConfiguracionVO:
         """
         return self.__Fecha
 
-    @Fecha.setter
-    def Fecha(self, Fecha: datetime) -> None:
+    def setFecha(self, Fecha: datetime) -> None:
         """
         Establece la fecha de la configuración.
 
@@ -51,8 +50,7 @@ class ConfiguracionVO:
         """
         self.__Fecha = Fecha
 
-    @property
-    def Usuario(self) -> Optional[UsuarioVO]:
+    def getUsuario(self) -> Optional[UsuarioVO]:
         """
         Obtiene el usuario asociado a la configuración.
 
@@ -61,8 +59,7 @@ class ConfiguracionVO:
         """
         return self.__Usuario
 
-    @Usuario.setter
-    def Usuario(self, Usuario: UsuarioVO) -> None:
+    def setUsuario(self, Usuario: UsuarioVO) -> None:
         """
         Establece el usuario asociado a la configuración.
 
@@ -71,8 +68,7 @@ class ConfiguracionVO:
         """
         self.__Usuario = Usuario
 
-    @property
-    def Interfaz(self) -> Optional[InterfazAudioVO]:
+    def getInterfaz(self) -> Optional[InterfazAudioVO]:
         """
         Obtiene la interfaz de audio asociada a la configuración.
 
@@ -81,8 +77,7 @@ class ConfiguracionVO:
         """
         return self.__Interfaz
 
-    @Interfaz.setter
-    def Interfaz(self, Interfaz: InterfazAudioVO) -> None:
+    def setInterfaz(self, Interfaz: InterfazAudioVO) -> None:
         """
         Establece la interfaz de audio asociada a la configuración.
 
@@ -91,17 +86,49 @@ class ConfiguracionVO:
         """
         self.__Interfaz = Interfaz
 
-    def __str__(self) -> str:
+    def getCanales(self) -> List[CanalVO]:
         """
-        Retorna una representación en cadena de la configuración.
+        Obtiene los canales asociados a la configuración.
+        
+        Returns:
+            List[CanalVO]: Una lista con los canales asociados a la configuración.
+        """
+        return self.__Canales
+
+    def setEntradas(self) -> List[EntradaVO]:
+        """
+        Obtiene las entradas asociadas a la configuración.
 
         Returns:
-            str: Una cadena que representa la configuración.
+            List[EntradaVO]: Una lista con las entradas asociadas a la configuración.
         """
+        return self.__Entradas
+
+    def setCanal(self, canal: CanalVO) -> None:
+        """
+        Agrega un canal a la configuración.
+
+        Args:
+            canal (CanalVO): El canal a agregar.
+        """
+        self.__Canales.append(canal)
+
+    def setEntrada(self, entrada: EntradaVO) -> None:
+        """
+        Agrega una entrada a la configuración.
+
+        Args:
+            entrada (EntradaVO): La entrada a agregar.
+        """
+        self.__Entradas.append(entrada)
+
+    def __str__(self) -> str:
         return (f"Configuración ID: {self.__ID}, "
                 f"Fecha: {self.__Fecha}, "
                 f"Usuario: {self.__Usuario.getEmail() if self.__Usuario else 'No asignado'}, "
-                f"Interfaz: {self.__Interfaz.nombreCorto if self.__Interfaz else 'No asignada'}")
+                f"Interfaz: {self.__Interfaz.getNombreCorto() if self.__Interfaz else 'No asignada'}, "
+                f"Canales: {len(self.__Canales)}, "
+                f"Entradas: {len(self.__Entradas)}")
 
     def to_dict(self) -> dict:
         """
