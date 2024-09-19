@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 
 #Especificación de la ruta donde se encuentra la base de datos
-especificacionRuta = 'sistemaConfiguracionPanel/db/Base_De_Datos.db'
+especificacionRuta = 'db/Base_De_Datos.db'
 
 #Construir una conexión
 def crearConexion(rutaBD=especificacionRuta):
