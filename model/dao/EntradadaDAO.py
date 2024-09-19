@@ -20,9 +20,9 @@ class EntradaDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT e.ID_Entrada, e.ID_Dispositivo, e.Etiqueta, e.Descripcion 
-                FROM Entrada e
-                JOIN Dispositivo d ON e.ID_Dispositivo = d.ID_Dispositivo;
+                SELECT Entrada.ID_Entrada, Conectado.ID_Dispositivo, Entrada.Etiqueta, Entrada.Descripcion 
+                FROM Entrada
+                LEFT JOIN Conectado ON Entrada.ID_Entrada = Conectado.ID_Entrada;
             """
             cur = conn.cursor()
             cur.execute(sql)
@@ -30,7 +30,7 @@ class EntradaDAO:
 
             self.todasLasEntradas.clear()
             for registro in registros:
-                dispositivo = self.dispositivoDAO.getDispositivo(DispositivoVO(pID_Dispo=registro[1]))
+                dispositivo = self.dispositivoDAO.getDispositivo(DispositivoVO(pID_Dispo=registro[1])) if registro[1] else None
                 self.todasLasEntradas.append(
                     EntradaVO(
                         pId=registro[0],
@@ -53,17 +53,17 @@ class EntradaDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT e.ID_Entrada, e.ID_Dispositivo, e.Etiqueta, e.Descripcion 
-                FROM Entrada e
-                JOIN Dispositivo d ON e.ID_Dispositivo = d.ID_Dispositivo
-                WHERE e.ID_Entrada = ?;
+                SELECT Entrada.ID_Entrada, Conectado.ID_Dispositivo, Entrada.Etiqueta, Entrada.Descripcion 
+                FROM Entrada
+                LEFT JOIN Conectado ON Entrada.ID_Entrada = Conectado.ID_Entrada
+                WHERE Entrada.ID_Entrada = ?;
             """
             cur = conn.cursor()
             cur.execute(sql, (str(entradaVO.id),))
             registro = cur.fetchone()
 
             if registro:
-                dispositivo = self.dispositivoDAO.getDispositivo(DispositivoVO(pID_Dispo=registro[1]))
+                dispositivo = self.dispositivoDAO.getDispositivo(DispositivoVO(pID_Dispo=registro[1])) if registro[1] else None
                 self.resultadoUnaEntrada = EntradaVO(
                     pId=registro[0],
                     pDispositivo=dispositivo,
@@ -87,9 +87,18 @@ class EntradaDAO:
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "INSERT INTO Entrada (ID_Dispositivo, Etiqueta, Descripcion) VALUES (?, ?, ?);"
                 cur = conn.cursor()
-                cur.execute(sql, (entradaVO.dispositivo.Id, entradaVO.etiqueta, entradaVO.descripcion))
+                
+                # Insertar en la tabla Entrada
+                sql_entrada = "INSERT INTO Entrada (Etiqueta, Descripcion) VALUES (?, ?);"
+                cur.execute(sql_entrada, (entradaVO.etiqueta, entradaVO.descripcion))
+                id_entrada = cur.lastrowid
+
+                # Si hay un dispositivo asociado, insertar en la tabla Conectado
+                if entradaVO.dispositivo:
+                    sql_conectado = "INSERT INTO Conectado (ID_Entrada, ID_Dispositivo) VALUES (?, ?);"
+                    cur.execute(sql_conectado, (id_entrada, entradaVO.dispositivo.Id))
+
                 conn.commit()
                 return True
         except Exception as e:
@@ -108,11 +117,28 @@ class EntradaDAO:
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "UPDATE Entrada SET ID_Dispositivo = ?, Etiqueta = ?, Descripcion = ? WHERE ID_Entrada = ?;"
                 cur = conn.cursor()
-                cur.execute(sql, (entradaVO.dispositivo.Id, entradaVO.etiqueta, entradaVO.descripcion, str(entradaVO.id)))
+                
+                # Actualizar la tabla Entrada
+                sql_entrada = "UPDATE Entrada SET Etiqueta = ?, Descripcion = ? WHERE ID_Entrada = ?;"
+                cur.execute(sql_entrada, (entradaVO.etiqueta, entradaVO.descripcion, str(entradaVO.id)))
+
+                # Actualizar o insertar en la tabla Conectado
+                if entradaVO.dispositivo:
+                    sql_check = "SELECT 1 FROM Conectado WHERE ID_Entrada = ?;"
+                    cur.execute(sql_check, (str(entradaVO.id),))
+                    if cur.fetchone():
+                        sql_conectado = "UPDATE Conectado SET ID_Dispositivo = ? WHERE ID_Entrada = ?;"
+                    else:
+                        sql_conectado = "INSERT INTO Conectado (ID_Dispositivo, ID_Entrada) VALUES (?, ?);"
+                    cur.execute(sql_conectado, (entradaVO.dispositivo.Id, str(entradaVO.id)))
+                else:
+                    # Si no hay dispositivo, eliminar la relación si existía
+                    sql_delete = "DELETE FROM Conectado WHERE ID_Entrada = ?;"
+                    cur.execute(sql_delete, (str(entradaVO.id),))
+
                 conn.commit()
-                return cur.rowcount > 0
+                return True
         except Exception as e:
             print(f"Error al actualizar entrada: {e}")
             return False
@@ -129,11 +155,18 @@ class EntradaDAO:
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "DELETE FROM Entrada WHERE ID_Entrada = ?;"
                 cur = conn.cursor()
-                cur.execute(sql, (str(entradaVO.id),))
+                
+                # Eliminar de la tabla Conectado primero (si existe)
+                sql_delete_conectado = "DELETE FROM Conectado WHERE ID_Entrada = ?;"
+                cur.execute(sql_delete_conectado, (str(entradaVO.id),))
+                
+                # Luego eliminar de la tabla Entrada
+                sql_delete_entrada = "DELETE FROM Entrada WHERE ID_Entrada = ?;"
+                cur.execute(sql_delete_entrada, (str(entradaVO.id),))
+                
                 conn.commit()
-                return cur.rowcount > 0
+                return True
         except Exception as e:
             print(f"Error al eliminar entrada: {e}")
             return False
@@ -150,9 +183,10 @@ class EntradaDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT e.ID_Entrada, e.ID_Dispositivo, e.Etiqueta, e.Descripcion 
-                FROM Entrada e
-                WHERE e.ID_Dispositivo = ?;
+                SELECT Entrada.ID_Entrada, Conectado.ID_Dispositivo, Entrada.Etiqueta, Entrada.Descripcion 
+                FROM Entrada
+                JOIN Conectado ON Entrada.ID_Entrada = Conectado.ID_Entrada
+                WHERE Conectado.ID_Dispositivo = ?;
             """
             cur = conn.cursor()
             cur.execute(sql, (str(dispositivoVO.Id),))
