@@ -1,52 +1,8 @@
 from typing import List, Optional
 from db import conexion as cbd
 from model.vo.FrecuenciaVO import FrecuenciaVO
-
-class TipoVO:
-    def __init__(self, pId: int = -1, pNombre: str = "", pDescripcion: str = ""):
-        self.__id = pId
-        self.__nombre = pNombre
-        self.__descripcion = pDescripcion
-
-    @property
-    def id(self):
-        return self.__id
-
-    @property
-    def nombre(self):
-        return self.__nombre
-
-    @property
-    def descripcion(self):
-        return self.__descripcion
-
-    def setNombre(self, pNombre: str):
-        self.__nombre = pNombre
-
-    def setDescripcion(self, pDescripcion: str):
-        self.__descripcion = pDescripcion
-
-    def __str__(self) -> str:
-        return f'ID: {self.__id}, Nombre: {self.__nombre}, Descripción: {self.__descripcion}'
-
-class FuenteVO:
-    def __init__(self, pId: int = -1, pTipo: TipoVO = None):
-        self.__id = pId
-        self.__tipo = pTipo
-
-    @property
-    def id(self):
-        return self.__id
-
-    @property
-    def tipo(self):
-        return self.__tipo
-
-    def setTipo(self, pTipo: TipoVO):
-        self.__tipo = pTipo
-
-    def __str__(self) -> str:
-        return f'ID: {self.__id}, Tipo: {self.__tipo}'
+from model.vo.TipoVO import TipoVO
+from model.vo.FuenteVO import FuenteVO
 
 class FuenteDAO:
     def __init__(self):
