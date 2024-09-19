@@ -345,7 +345,7 @@ class ConfiguracionDAO:
                 WHERE c.ID_Configuracion = ?;
             """
             cur = conn.cursor()
-            cur.execute(sql, (str(configuracionVO.ID),))
+            cur.execute(sql, (str(configuracionVO.getID()),))
             registros = cur.fetchall()
 
             entradas = []

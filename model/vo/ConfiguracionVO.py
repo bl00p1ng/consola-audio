@@ -22,6 +22,8 @@ class ConfiguracionVO:
         self.__Fecha = Fecha
         self.__Usuario = Usuario
         self.__Interfaz = Interfaz
+        self.__Canales: List[CanalVO] = []
+        self.__Entradas: List[EntradaVO] = []
 
     def getID(self) -> int:
         """
@@ -95,7 +97,7 @@ class ConfiguracionVO:
         """
         return self.__Canales
 
-    def setEntradas(self) -> List[EntradaVO]:
+    def getEntradas(self) -> List[EntradaVO]:
         """
         Obtiene las entradas asociadas a la configuración.
 
@@ -103,6 +105,24 @@ class ConfiguracionVO:
             List[EntradaVO]: Una lista con las entradas asociadas a la configuración.
         """
         return self.__Entradas
+
+    def setCanales(self, canales: List[CanalVO]) -> None:
+        """
+        Establece la lista completa de canales de la configuración.
+
+        Args:
+            canales (List[CanalVO]): La nueva lista de canales.
+        """
+        self.__Canales = canales
+
+    def setEntradas(self, entradas: List[EntradaVO]) -> None:
+        """
+        Establece la lista completa de entradas de la configuración.
+
+        Args:
+            entradas (List[EntradaVO]): La nueva lista de entradas.
+        """
+        self.__Entradas = entradas
 
     def setCanal(self, canal: CanalVO) -> None:
         """
@@ -141,7 +161,9 @@ class ConfiguracionVO:
             "ID": self.__ID,
             "Fecha": self.__Fecha.isoformat(),
             "Usuario": self.__Usuario.to_dict() if self.__Usuario else None,
-            "Interfaz": self.__Interfaz.to_dict() if self.__Interfaz else None
+            "Interfaz": self.__Interfaz.to_dict() if self.__Interfaz else None,
+            "Canales": [canal.to_dict() for canal in self.__Canales],
+            "Entradas": [entrada.to_dict() for entrada in self.__Entradas]
         }
 
     @classmethod
@@ -155,9 +177,12 @@ class ConfiguracionVO:
         Returns:
             ConfiguracionVO: Una nueva instancia de ConfiguracionVO.
         """
-        return cls(
+        config = cls(
             ID=data.get('ID', -1),
             Fecha=datetime.fromisoformat(data['Fecha']) if 'Fecha' in data else datetime.now(),
             Usuario=UsuarioVO.from_dict(data['Usuario']) if data.get('Usuario') else None,
             Interfaz=InterfazAudioVO.from_dict(data['Interfaz']) if data.get('Interfaz') else None
         )
+        config.setCanales([CanalVO.from_dict(canal) for canal in data.get('Canales', [])])
+        config.setEntradas([EntradaVO.from_dict(entrada) for entrada in data.get('Entradas', [])])
+        return config
