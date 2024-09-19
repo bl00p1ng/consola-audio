@@ -16,7 +16,7 @@ class DispositivoDAO:
             List[DispositivoVO]: Lista con todos los dispositivos disponibles.
         """
         with cbd.crearConexion() as conn:
-            sql = "SELECT * FROM Dispositivo;"
+            sql = "SELECT ID_Dispositivo, Nombre, Descripcion FROM Dispositivo;"
             cur = conn.cursor()
             cur.execute(sql)
             registros = cur.fetchall()
@@ -43,7 +43,7 @@ class DispositivoDAO:
             Optional[DispositivoVO]: El dispositivo encontrado o None si no existe.
         """
         with cbd.crearConexion() as conn:
-            sql = "SELECT * FROM Dispositivo WHERE ID_Dispositivo = ?;"
+            sql = "SELECT ID_Dispositivo, Nombre, Descripcion FROM Dispositivo WHERE ID_Dispositivo = ?;"
             cur = conn.cursor()
             cur.execute(sql, (str(dispositivoVO.Id),))
             registro = cur.fetchone()
