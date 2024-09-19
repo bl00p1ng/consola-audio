@@ -89,7 +89,7 @@ if usuario_seleccionado:
             fuentes = fuente_dao.getAll()
             canales_actualizados = []
             for canal in configuracion.getCanales():
-                # Obtenemos los valores específicos de Establece para este canal y esta configuración
+                # Obtener los valores específicos de Establece para este canal y esta configuración
                 establece = canal_dao.getParametrosCanal(canal.id, configuracion.getID())
                 
                 content = f"""
@@ -111,7 +111,6 @@ if usuario_seleccionado:
                     establece['ID_Fuente'] = nueva_fuente.id
                 
                 with col2:
-                    # El volumen ya está entre 0 y 100, no necesitamos convertirlo
                     nuevo_volumen = st.slider('Volumen:', 0, 100, establece['Volumen'], 1, key=f'volumen_{canal.id}')
                     establece['Volumen'] = nuevo_volumen
                 
