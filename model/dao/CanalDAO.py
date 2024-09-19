@@ -56,7 +56,7 @@ class CanalDAO:
                 WHERE Codigo_Canal = ?;
             """
             cur = conn.cursor()
-            cur.execute(sql, (str(canalVO.getId()),))
+            cur.execute(sql, (str(canalVO.id),))
             registro = cur.fetchone()
 
             if registro:
