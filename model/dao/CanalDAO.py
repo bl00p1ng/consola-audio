@@ -19,7 +19,7 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT c.Codigo_Canal, c.Etiqueta, c.Volumen, c.Link, c.Mute, c.Solo, c.ID_Fuente 
+                SELECT c.Codigo_Canal, c.Etiqueta, c.ID_Fuente 
                 FROM Canal c
                 LEFT JOIN Fuente f ON c.ID_Fuente = f.ID_Fuente;
             """
@@ -29,15 +29,11 @@ class CanalDAO:
 
             self.todosLosCanales.clear()
             for registro in registros:
-                fuente = self.fuenteDAO.getFuente(registro[6]) if registro[6] else None
+                fuente = self.fuenteDAO.getFuente(registro[2]) if registro[2] else None
                 self.todosLosCanales.append(
                     CanalVO(
                         pId=registro[0],
                         pEtiqueta=registro[1],
-                        pVolumen=registro[2],
-                        pLink=bool(registro[3]),
-                        pMute=bool(registro[4]),
-                        pSolo=bool(registro[5]),
                         pFuente=fuente
                     )
                 )
@@ -55,9 +51,8 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT Codigo_Canal, Etiqueta, Volumen, Link, Mute, Solo, ID_Fuente 
+                SELECT Codigo_Canal, Etiqueta, ID_Fuente 
                 FROM Canal
-                LEFT JOIN Fuente ON ID_Fuente = ID_Fuente
                 WHERE Codigo_Canal = ?;
             """
             cur = conn.cursor()
@@ -65,14 +60,10 @@ class CanalDAO:
             registro = cur.fetchone()
 
             if registro:
-                fuente = self.fuenteDAO.getFuente(registro[6]) if registro[6] else None
+                fuente = self.fuenteDAO.getFuente(registro[2]) if registro[2] else None
                 self.resultadoUnCanal = CanalVO(
                     pId=registro[0],
                     pEtiqueta=registro[1],
-                    pVolumen=registro[2],
-                    pLink=bool(registro[3]),
-                    pMute=bool(registro[4]),
-                    pSolo=bool(registro[5]),
                     pFuente=fuente
                 )
             else:
@@ -93,17 +84,13 @@ class CanalDAO:
         try:
             with cbd.crearConexion() as conn:
                 sql = """
-                    INSERT INTO Canal (Etiqueta, Volumen, Link, Mute, Solo, ID_Fuente)
-                    VALUES (?, ?, ?, ?, ?, ?);
+                    INSERT INTO Canal (Etiqueta, ID_Fuente)
+                    VALUES (?, ?);
                 """
                 cur = conn.cursor()
                 cur.execute(sql, (
-                    canalVO.etiqueta,
-                    canalVO.volumen,
-                    int(canalVO.link),
-                    int(canalVO.mute),
-                    int(canalVO.solo),
-                    canalVO.fuente.id if canalVO.fuente else None
+                    canalVO.getEtiqueta(),
+                    canalVO.getFuente().getId() if canalVO.getFuente() else None
                 ))
                 conn.commit()
                 return True
@@ -125,18 +112,14 @@ class CanalDAO:
             with cbd.crearConexion() as conn:
                 sql = """
                     UPDATE Canal
-                    SET Etiqueta = ?, Volumen = ?, Link = ?, Mute = ?, Solo = ?, ID_Fuente = ?
+                    SET Etiqueta = ?, ID_Fuente = ?
                     WHERE Codigo_Canal = ?;
                 """
                 cur = conn.cursor()
                 cur.execute(sql, (
-                    canalVO.etiqueta,
-                    canalVO.volumen,
-                    int(canalVO.link),
-                    int(canalVO.mute),
-                    int(canalVO.solo),
-                    canalVO.fuente.id if canalVO.fuente else None,
-                    str(canalVO.id)
+                    canalVO.getEtiqueta(),
+                    canalVO.getFuente().getId() if canalVO.getFuente() else None,
+                    str(canalVO.getId())
                 ))
                 conn.commit()
                 return cur.rowcount > 0
@@ -158,7 +141,7 @@ class CanalDAO:
             with cbd.crearConexion() as conn:
                 sql = "DELETE FROM Canal WHERE Codigo_Canal = ?;"
                 cur = conn.cursor()
-                cur.execute(sql, (str(canalVO.id),))
+                cur.execute(sql, (str(canalVO.getId()),))
                 conn.commit()
                 return cur.rowcount > 0
         except Exception as e:
@@ -177,9 +160,8 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT c.Codigo_Canal, c.Etiqueta, c.Volumen, c.Link, c.Mute, c.Solo, c.ID_Fuente 
+                SELECT c.Codigo_Canal, c.Etiqueta, c.ID_Fuente 
                 FROM Canal c
-                LEFT JOIN Fuente f ON c.ID_Fuente = f.ID_Fuente
                 WHERE c.Etiqueta = ?;
             """
             cur = conn.cursor()
@@ -187,14 +169,10 @@ class CanalDAO:
             registro = cur.fetchone()
 
             if registro:
-                fuente = self.fuenteDAO.getFuente(registro[6]) if registro[6] else None
+                fuente = self.fuenteDAO.getFuente(registro[2]) if registro[2] else None
                 return CanalVO(
                     pId=registro[0],
                     pEtiqueta=registro[1],
-                    pVolumen=registro[2],
-                    pLink=bool(registro[3]),
-                    pMute=bool(registro[4]),
-                    pSolo=bool(registro[5]),
                     pFuente=fuente
                 )
             else:
@@ -212,7 +190,7 @@ class CanalDAO:
         """
         with cbd.crearConexion() as conn:
             sql = """
-                SELECT c.Codigo_Canal, c.Etiqueta, c.Volumen, c.Link, c.Mute, c.Solo, c.ID_Fuente 
+                SELECT c.Codigo_Canal, c.Etiqueta, c.ID_Fuente 
                 FROM Canal c
                 WHERE c.ID_Fuente = ?;
             """
@@ -222,100 +200,82 @@ class CanalDAO:
 
             canales = []
             for registro in registros:
-                fuente = self.fuenteDAO.getFuente(registro[6])
+                fuente = self.fuenteDAO.getFuente(registro[2])
                 canales.append(
                     CanalVO(
                         pId=registro[0],
                         pEtiqueta=registro[1],
-                        pVolumen=registro[2],
-                        pLink=bool(registro[3]),
-                        pMute=bool(registro[4]),
-                        pSolo=bool(registro[5]),
                         pFuente=fuente
                     )
                 )
             return canales
 
-    def ajustarVolumen(self, canalId: int, nuevoVolumen: float) -> bool:
+    def getParametrosCanal(self, canalId: int, configuracionId: int) -> dict:
         """
-        Ajusta el volumen de un canal específico.
+        Obtiene los parámetros de un canal para una configuración específica.
         
         Args:
-            canalId (int): ID del canal a ajustar.
-            nuevoVolumen (float): Nuevo valor de volumen.
+            canalId (int): ID del canal.
+            configuracionId (int): ID de la configuración.
         
         Returns:
-            bool: True si el ajuste fue exitoso, False en caso contrario.
+            dict: Diccionario con los parámetros del canal (Volumen, Solo, Mute, Link).
+        """
+        with cbd.crearConexion() as conn:
+            sql = """
+                SELECT Volumen, Solo, Mute, Link
+                FROM Establece
+                WHERE Codigo_Canal = ? AND ID_Configuracion = ?;
+            """
+            cur = conn.cursor()
+            cur.execute(sql, (str(canalId), str(configuracionId)))
+            registro = cur.fetchone()
+
+            if registro:
+                return {
+                    'Volumen': registro[0],
+                    'Solo': bool(registro[1]),
+                    'Mute': bool(registro[2]),
+                    'Link': bool(registro[3])
+                }
+            else:
+                return {}
+
+    def actualizarParametrosCanal(self, canalId: int, configuracionId: int, parametros: dict) -> bool:
+        """
+        Actualiza los parámetros de un canal para una configuración específica.
+        
+        Args:
+            canalId (int): ID del canal.
+            configuracionId (int): ID de la configuración.
+            parametros (dict): Diccionario con los parámetros a actualizar.
+        
+        Returns:
+            bool: True si la actualización fue exitosa, False en caso contrario.
         """
         try:
             with cbd.crearConexion() as conn:
-                sql = "UPDATE Canal SET Volumen = ? WHERE Codigo_Canal = ?;"
+                sql = """
+                    INSERT INTO Establece (Codigo_Canal, ID_Configuracion, Volumen, Solo, Mute, Link)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(Codigo_Canal, ID_Configuracion) DO UPDATE SET
+                    Volumen = ?, Solo = ?, Mute = ?, Link = ?;
+                """
                 cur = conn.cursor()
-                cur.execute(sql, (nuevoVolumen, str(canalId)))
+                cur.execute(sql, (
+                    str(canalId),
+                    str(configuracionId),
+                    parametros.get('Volumen', 0),
+                    int(parametros.get('Solo', False)),
+                    int(parametros.get('Mute', False)),
+                    int(parametros.get('Link', False)),
+                    parametros.get('Volumen', 0),
+                    int(parametros.get('Solo', False)),
+                    int(parametros.get('Mute', False)),
+                    int(parametros.get('Link', False))
+                ))
                 conn.commit()
-                return cur.rowcount > 0
+                return True
         except Exception as e:
-            print(f"Error al ajustar volumen del canal: {e}")
-            return False
-
-    def toggleMute(self, canalId: int) -> bool:
-        """
-        Activa o desactiva el mute de un canal específico.
-        
-        Args:
-            canalId (int): ID del canal a modificar.
-        
-        Returns:
-            bool: True si la operación fue exitosa, False en caso contrario.
-        """
-        try:
-            with cbd.crearConexion() as conn:
-                # Primero, obtenemos el estado actual de mute
-                cur = conn.cursor()
-                cur.execute("SELECT Mute FROM Canal WHERE Codigo_Canal = ?;", (str(canalId),))
-                resultado = cur.fetchone()
-                if resultado is None:
-                    return False
-                
-                estado_actual = bool(resultado[0])
-                nuevo_estado = not estado_actual
-
-                # Luego, actualizamos al nuevo estado
-                sql = "UPDATE Canal SET Mute = ? WHERE Codigo_Canal = ?;"
-                cur.execute(sql, (int(nuevo_estado), str(canalId)))
-                conn.commit()
-                return cur.rowcount > 0
-        except Exception as e:
-            print(f"Error al cambiar el estado de mute del canal: {e}")
-            return False
-
-    def toggleSolo(self, canalId: int) -> bool:
-        """
-        Activa o desactiva el solo de un canal específico.
-        
-        Args:
-            canalId (int): ID del canal a modificar.
-        
-        Returns:
-            bool: True si la operación fue exitosa, False en caso contrario.
-        """
-        try:
-            with cbd.crearConexion() as conn:
-                # Primero, obtenemos el estado actual de solo
-                cur = conn.cursor()
-                cur.execute("SELECT Solo FROM Canal WHERE Codigo_Canal = ?;", (str(canalId),))
-                resultado = cur.fetchone()
-                if resultado is None:
-                    return False
-                
-                estado_actual = bool(resultado[0])
-                nuevo_estado = not estado_actual
-
-                # Luego, actualizamos al nuevo estado
-                sql = "UPDATE Canal SET Solo = ? WHERE Codigo_Canal = ?;"
-                cur.execute(sql, (int(nuevo_estado), str(canalId)))
-                conn.commit()
-                return cur.rowcount > 0
-        except Exception as e:
-            print(f"Error al cambiar el estado de solo del canal: {e}")
+            print(f"Error al actualizar parámetros del canal: {e}")
             return False
