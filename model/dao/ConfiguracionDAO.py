@@ -271,7 +271,7 @@ class ConfiguracionDAO:
                 WHERE ID_Configuracion = ?;
             """
             cur = conn.cursor()
-            cur.execute(sql_personaliza, (configuracionVO.ID,))
+            cur.execute(sql_personaliza, (configuracionVO.getID(),))
             personaliza = cur.fetchone()
             if personaliza:
                 usuario = self.usuarioDAO.getUsuario(UsuarioVO(uId=personaliza[0]))
@@ -280,10 +280,14 @@ class ConfiguracionDAO:
                 configuracionVO.setInterfaz(interfaz)
 
             # Cargar canales
-            configuracionVO.setCanales(self.getCanalesConfiguracion(configuracionVO))
+            canales = self.getCanalesConfiguracion(configuracionVO)
+            for canal in canales:
+                configuracionVO.setCanal(canal)
 
             # Cargar entradas
-            configuracionVO.setEntradas(self.getEntradasConfiguracion(configuracionVO))
+            entradas = self.getEntradasConfiguracion(configuracionVO)
+            for entrada in entradas:
+                configuracionVO.setEntrada(entrada)
 
     def getCanalesConfiguracion(self, configuracionVO: ConfiguracionVO) -> List[CanalVO]:
         """
@@ -303,7 +307,7 @@ class ConfiguracionDAO:
                 WHERE e.ID_Configuracion = ?;
             """
             cur = conn.cursor()
-            cur.execute(sql, (str(configuracionVO.ID),))
+            cur.execute(sql, (str(configuracionVO.getID()),))
             registros = cur.fetchall()
 
             canales = []
