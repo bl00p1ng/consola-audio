@@ -7,7 +7,7 @@ class FuenteVO:
             pTipo: TipoVO = None
         ):
         self.__id = pId
-        self.tipo = pTipo
+        self.__tipo = pTipo
         
     @property
     def id(self):
@@ -15,10 +15,10 @@ class FuenteVO:
     
     @property
     def tipo(self):
-        return self.tipo
+        return self.__tipo
     
     def setTipo(self, nTipo):
-        self.tipo = nTipo
+        self.__tipo = nTipo
         
     def __str__(self) -> str:
-        return f'ID: {self.__id}, Tipo: {self.tipo}'
+        return f'ID: {self.__id}, Tipo: {self.__tipo}'

@@ -6,22 +6,22 @@ class TipoVO:
             pDescripcion: str=""
         ):
         self.__id = pId
-        self.nombre = pNombre
-        self.descripcion = pDescripcion
+        self.__nombre = pNombre
+        self.__descripcion = pDescripcion
         
     @property
     def nombre(self):
-        return self.nombre
+        return self.__nombre
     
     @property
     def descripcion(self):
-        return self.descripcion
+        return self.__descripcion
     
     def setNombre(self, nNombre):
-        self.nombre = nNombre
+        self.__nombre = nNombre
         
     def setDescripcion(self, nDescripcion):
-        self.descripcion = nDescripcion
+        self.__descripcion = nDescripcion
         
     def __str__(self) -> str:
         return f'ID: {self.__id}, Etiqueta: {self.nombre}, Descripción: {self.descripcion}'
