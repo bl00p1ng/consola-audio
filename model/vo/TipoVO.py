@@ -8,6 +8,10 @@ class TipoVO:
         self.__id = pId
         self.__nombre = pNombre
         self.__descripcion = pDescripcion
+
+    @property
+    def id(self):
+        return self.__id
         
     @property
     def nombre(self):
