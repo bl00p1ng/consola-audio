@@ -163,36 +163,36 @@ if usuario_seleccionado:
                 with col3:
                     link = st.checkbox('Link', establece['Link'], key=f'link_{canal.id}')
 
-        if st.button('Guardar Configuración'):
-            try:
-                # Actualizar frecuencia
-                interfaz.setFrecuencia(nueva_frecuencia)
+        # if st.button('Guardar Configuración'):
+        #     try:
+        #         # Actualizar frecuencia
+        #         interfaz.setFrecuencia(nueva_frecuencia)
                 
-                # Actualizar entradas
-                for entrada in configuracion.getEntradas():
-                    nuevo_dispositivo = st.session_state[f'dispositivo_{entrada.id}']
-                    entrada.setDispositivo(nuevo_dispositivo)
+        #         # Actualizar entradas
+        #         for entrada in configuracion.getEntradas():
+        #             nuevo_dispositivo = st.session_state[f'dispositivo_{entrada.id}']
+        #             entrada.setDispositivo(nuevo_dispositivo)
                 
-                # Actualizar canales
-                for canal in configuracion.getCanales():
-                    establece = canal_dao.getParametrosCanal(canal.id, configuracion.getID())
-                    nueva_fuente = st.session_state[f'fuente_{canal.id}']
-                    nuevo_tipo = st.session_state[f'tipo_{canal.id}']
-                    establece['Volumen'] = st.session_state[f'volumen_{canal.id}']
-                    establece['Solo'] = st.session_state[f'solo_{canal.id}']
-                    establece['Mute'] = st.session_state[f'mute_{canal.id}']
-                    establece['Link'] = st.session_state[f'link_{canal.id}']
+        #         # Actualizar canales
+        #         for canal in configuracion.getCanales():
+        #             establece = canal_dao.getParametrosCanal(canal.id, configuracion.getID())
+        #             nueva_fuente = st.session_state[f'fuente_{canal.id}']
+        #             nuevo_tipo = st.session_state[f'tipo_{canal.id}']
+        #             establece['Volumen'] = st.session_state[f'volumen_{canal.id}']
+        #             establece['Solo'] = st.session_state[f'solo_{canal.id}']
+        #             establece['Mute'] = st.session_state[f'mute_{canal.id}']
+        #             establece['Link'] = st.session_state[f'link_{canal.id}']
                     
-                    nueva_fuente.setTipo(nuevo_tipo)
-                    canal.setFuente(nueva_fuente)
-                    canal_dao.actualizarParametrosCanal(canal.id, configuracion.getID(), establece)
+        #             nueva_fuente.setTipo(nuevo_tipo)
+        #             canal.setFuente(nueva_fuente)
+        #             canal_dao.actualizarParametrosCanal(canal.id, configuracion.getID(), establece)
                 
-                if configuracion_dao.updateConfiguracion(configuracion):
-                    st.success('Configuración guardada exitosamente!')
-                else:
-                    st.error('Error al guardar la configuración. Por favor, intenta de nuevo.')
-            except Exception as e:
-                st.error(f'Ocurrió un error al guardar la configuración: {str(e)}')
+        #         if configuracion_dao.updateConfiguracion(configuracion):
+        #             st.success('Configuración guardada exitosamente!')
+        #         else:
+        #             st.error('Error al guardar la configuración. Por favor, intenta de nuevo.')
+        #     except Exception as e:
+        #         st.error(f'Ocurrió un error al guardar la configuración: {str(e)}')
 
 else:
     st.info('Por favor, selecciona un usuario para ver y editar su configuración.')
