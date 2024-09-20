@@ -1,6 +1,13 @@
 # Consola de Audio Perrona
 
-Este proyecto implementa una interfaz de usuario para una consola de audio utilizando Python, Streamlit y SQLite
+Este proyecto implementa una interfaz de usuario para una consola de audio utilizando Python, Streamlit y SQLite.
+
+**Integrantes:**
+- Andrés Felipe López Molina
+- Juan Sebastián Díaz Mas
+
+**NOTA:** POR TEMAS DE TIEMPO NO FUE POSIBLE TERMINAR LA IMPLEMENTACIÓN DE LA EDICIÓN DE DATOS, QUEDARON BUGS PENDIENTES POR RESOLVER
+EN ESA PARTE ASÍ QUE ESTA DESHABILITADA ESTA OPCIÓN.
 
 ## Requisitos Previos
 
@@ -10,18 +17,12 @@ Este proyecto implementa una interfaz de usuario para una consola de audio utili
 
 ## Configuración del Entorno
 
-1. Clona el repositorio (o descarga el código fuente):
-   ```
-   git clone git@github.com:bl00p1ng/consola-audio.git
-   cd consola-audio
-   ```
-
-2. Crea un entorno virtual:
+1. Crea un entorno virtual:
    ```
    python -m venv venv
    ```
 
-3. Activa el entorno virtual:
+2. Activa el entorno virtual:
    - En Windows:
      ```
      venv\Scripts\activate
