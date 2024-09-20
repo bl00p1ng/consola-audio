@@ -1,4 +1,5 @@
 import streamlit as st
+from model.dao.FrecuenciaDAO import FrecuenciaDAO
 from model.dao.UsuarioDAO import UsuarioDAO
 from model.dao.ConfiguracionDAO import ConfiguracionDAO
 from model.dao.DispositivoDAO import DispositivoDAO
@@ -15,9 +16,9 @@ def custom_css():
         margin: 10px 0;
     }
     .card-header {
-       background: #f12711; /* fallback for old browsers */
-        background: -webkit-linear-gradient(to right, #f12711, #f5af19); /* Chrome 10-25, Safari 5.1-6 */
-        background: linear-gradient(to right, #f12711, #f5af19); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+       background: #f12711;
+        background: -webkit-linear-gradient(to right, #f12711, #f5af19);
+        background: linear-gradient(to right, #f12711, #f5af19);
         padding: 10px;
         border-radius: 10px;
         display: flex;
@@ -45,6 +46,7 @@ dispositivo_dao = DispositivoDAO()
 canal_dao = CanalDAO()
 fuente_dao = FuenteDAO()
 tipo_dao = TipoDAO()
+frecuencia_dao = FrecuenciaDAO()
 
 # Configuración de la página
 st.set_page_config(page_title="Consola de Audio", layout="wide")
@@ -66,7 +68,7 @@ if usuario_seleccionado:
     # Obtener la última configuración del usuario
     configuraciones = configuracion_dao.getConfiguracionesPorUsuario(usuario_seleccionado)
     if configuraciones:
-        configuracion = configuraciones[0]  # Asumimos que la primera es la más reciente
+        configuracion = configuraciones[0]
         
         # Mostrar información de la interfaz de audio
         interfaz = configuracion.getInterfaz()
@@ -84,12 +86,13 @@ if usuario_seleccionado:
         """, unsafe_allow_html=True)
 
         # Selector de frecuencia
-        frecuencias = [44.1, 48, 96]  # Añade más opciones si es necesario
-        frecuencia_actual = interfaz.frecuencia.valor
+        todas_frecuencias = frecuencia_dao.getAll()
+        frecuencia_actual = interfaz.frecuencia
         nueva_frecuencia = st.selectbox(
             'Frecuencia (kHz):',
-            options=frecuencias,
-            index=frecuencias.index(frecuencia_actual) if frecuencia_actual in frecuencias else 0
+            options=todas_frecuencias,
+            index=todas_frecuencias.index(frecuencia_actual) if frecuencia_actual in todas_frecuencias else 0,
+            format_func=lambda x: f"{x.valor} kHz"
         )
         
         # Contenedor para entradas y canales
@@ -163,6 +166,7 @@ if usuario_seleccionado:
                 with col3:
                     link = st.checkbox('Link', establece['Link'], key=f'link_{canal.id}')
 
+        # EDICIÓN DE CONFIGURACIÓN DESHABILITADA
         # if st.button('Guardar Configuración'):
         #     try:
         #         # Actualizar frecuencia
