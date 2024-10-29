@@ -11,6 +11,8 @@ from peewee import (
 
 from model import interfaz_audio
 from model.base import BaseModel
+from model.canal import Canal
+from model.entrada import Entrada
 from model.usuario import Usuario, Personaliza
 
 class Configuracion(BaseModel):
