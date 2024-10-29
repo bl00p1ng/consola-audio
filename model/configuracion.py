@@ -186,6 +186,12 @@ class Establece(BaseModel):
         mute (BooleanField): Estado de mute
         link (BooleanField): Estado de link
     """
+
+    id_establece = IntegerField(
+        primary_key=True,
+        column_name='ID_Establece',
+        help_text="Identificador único de la relación"
+    )
     
     configuracion = ForeignKeyField(
         Configuracion,
@@ -200,18 +206,22 @@ class Establece(BaseModel):
         on_delete='CASCADE'
     )
     volumen = FloatField(
+        column_name="Volumen",
         default=0.0,
         help_text="Nivel de volumen del canal"
     )
     solo = BooleanField(
+        column_name="Solo",
         default=False,
         help_text="Estado de solo del canal"
     )
     mute = BooleanField(
+        column_name="Mute",
         default=False,
         help_text="Estado de mute del canal"
     )
     link = BooleanField(
+        column_name="Link",
         default=False,
         help_text="Estado de link del canal"
     )

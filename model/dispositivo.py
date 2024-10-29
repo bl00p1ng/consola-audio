@@ -44,14 +44,6 @@ class Dispositivo(BaseModel):
         null=True,
         help_text="Descripción detallada del dispositivo"
     )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
-    )
 
     class Meta:
         table_name = 'Dispositivo'

@@ -41,13 +41,6 @@ class Canal(BaseModel):
         null=False,
         help_text="Etiqueta identificativa del canal"
     )
-    fuente = DeferredForeignKey(
-        'Fuente',
-        backref='canales',
-        column_name='ID_Fuente',
-        null=True,
-        on_delete='SET NULL'
-    )
 
     class Meta:
         table_name = 'Canal'
