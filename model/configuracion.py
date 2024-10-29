@@ -75,12 +75,18 @@ class Configuracion(BaseModel):
         Returns:
             InterfazAudio: Interfaz de audio asociada
         """
+        from model.interfaz_audio import InterfazAudio
         from model.usuario import Personaliza
-        personaliza = (Personaliza
-                      .select()
-                      .where(Personaliza.configuracion == self)
-                      .first())
-        return personaliza.interfaz if personaliza else None
+        
+        try:
+            return (InterfazAudio
+                   .select()
+                   .join(Personaliza, on=(Personaliza.interfaz == InterfazAudio.id_interfaz))
+                   .where(Personaliza.configuracion == self.id_configuracion)
+                   .get())
+        except Exception as e:
+            print(f"Error al obtener interfaz: {e}")
+            return None
 
     def get_canales(self) -> List['Canal']:
         """
@@ -90,7 +96,14 @@ class Configuracion(BaseModel):
             List[Canal]: Lista de canales con sus parámetros
         """
         from model.canal import Canal
-        return [establece.canal for establece in self.establece_set]
+        try:
+            return (Canal
+                   .select()
+                   .join(Establece, on=(Establece.canal == Canal.codigo_canal))
+                   .where(Establece.configuracion == self.id_configuracion))
+        except Exception as e:
+            print(f"Error al obtener canales: {e}")
+            return []
 
     def get_entradas(self) -> List['Entrada']:
         """
@@ -99,7 +112,15 @@ class Configuracion(BaseModel):
         Returns:
             List[Entrada]: Lista de entradas conectadas
         """
-        return [conectado.entrada for conectado in self.conectado_set]
+        from model.entrada import Entrada
+        try:
+            return (Entrada
+                   .select()
+                   .join(Conectado, on=(Conectado.entrada == Entrada.id_entrada))
+                   .where(Conectado.configuracion == self.id_configuracion))
+        except Exception as e:
+            print(f"Error al obtener entradas: {e}")
+            return []
 
     def actualizar_parametros_canal(self, canal: 'Canal', 
                                   volumen: float = None, 
@@ -211,6 +232,12 @@ class Conectado(BaseModel):
         dispositivo (ForeignKeyField): Referencia al dispositivo
         entrada (ForeignKeyField): Referencia a la entrada
     """
+
+    id_conectado = IntegerField(
+        primary_key=True,
+        column_name='ID_Conectado',
+        help_text="Identificador único de la conexión"
+    )
     
     configuracion = ForeignKeyField(
         Configuracion,
@@ -229,11 +256,6 @@ class Conectado(BaseModel):
         backref='conectado_set',
         column_name='ID_Entrada',
         on_delete='CASCADE'
-    )
-    fecha = DateTimeField(
-        column_name='Fecha',
-        default=datetime.now,
-        help_text="Fecha y hora de conexión"
     )
 
     class Meta:

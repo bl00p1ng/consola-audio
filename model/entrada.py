@@ -37,11 +37,13 @@ class Entrada(BaseModel):
         help_text="Identificador único de la entrada"
     )
     etiqueta = CharField(
+        column_name='Etiqueta',
         max_length=100,
         null=False,
         help_text="Etiqueta identificativa de la entrada"
     )
     descripcion = CharField(
+        column_name='Descripcion',
         max_length=255,
         null=True,
         help_text="Descripción detallada de la entrada"

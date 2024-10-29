@@ -36,14 +36,6 @@ class Frecuencia(BaseModel):
         index=True,
         help_text="Valor de la frecuencia en kHz"
     )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
-    )
 
     class Meta:
         table_name = 'Frecuencia'
@@ -90,7 +82,7 @@ class Frecuencia(BaseModel):
         # Rango típico de frecuencias de muestreo en audio digital (8-192 kHz)
         return 8.0 <= valor <= 192.0
 
-    def get_interfaces(self) -> List['InterfazAudio']:
+    def get_interfaces(self):
         """
         Obtiene todas las interfaces de audio que soportan esta frecuencia.
         
