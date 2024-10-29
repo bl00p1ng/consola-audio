@@ -40,14 +40,12 @@ class Canal(BaseModel):
         null=False,
         help_text="Etiqueta identificativa del canal"
     )
-    fuente = DeferredForeignKey(
-        'Fuente',
+    fuente = ForeignKeyField(
+        'model.fuente.Fuente',
         backref='canales',
         column_name='ID_Fuente',
         null=True,
-        on_delete='SET NULL',
-        deferred_class='model.fuente.Fuente',
-        help_text="Fuente de audio asociada al canal"
+        on_delete='SET NULL'
     )
 
     class Meta:

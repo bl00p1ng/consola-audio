@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 
 from peewee import (
     DateTimeField, 
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from model.canal import Canal
     from model.usuario import Usuario
     from model.dispositivo import Dispositivo
+    from model.interfaz_audio import InterfazAudio
 
 class Configuracion(BaseModel):
     """
@@ -172,12 +173,11 @@ class Establece(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    canal = DeferredForeignKey(
-        'Canal',
+    canal = ForeignKeyField(
+        'model.canal.Canal', 
         backref='establece_set',
         column_name='Codigo_Canal',
-        on_delete='CASCADE',
-        deferred_class='model.canal.Canal'
+        on_delete='CASCADE'
     )
     volumen = FloatField(
         default=0.0,
@@ -219,19 +219,17 @@ class Conectado(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    dispositivo = DeferredForeignKey(
-        'Dispositivo',
+    dispositivo = ForeignKeyField(
+        'model.dispositivo.Dispositivo',  
         backref='conectado_set',
         column_name='ID_Dispositivo',
-        on_delete='CASCADE',
-        deferred_class='model.dispositivo.Dispositivo'
+        on_delete='CASCADE'
     )
-    entrada = DeferredForeignKey(
-        'Entrada',
+    entrada = ForeignKeyField(
+        'model.entrada.Entrada', 
         backref='conectado_set',
         column_name='ID_Entrada',
-        on_delete='CASCADE',
-        deferred_class='model.entrada.Entrada'
+        on_delete='CASCADE'
     )
 
     class Meta:

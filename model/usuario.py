@@ -199,19 +199,17 @@ class Personaliza(BaseModel):
         column_name='ID_Usuario',
         on_delete='CASCADE'
     )
-    configuracion = DeferredForeignKey(
-        'Configuracion',
+    configuracion = ForeignKeyField(
+        'model.configuracion.Configuracion',
         backref='personalizaciones',
         column_name='ID_Configuracion',
-        on_delete='CASCADE',
-        deferred_class='model.configuracion.Configuracion'
+        on_delete='CASCADE'
     )
-    interfaz = DeferredForeignKey(
-        'InterfazAudio',
+    interfaz = ForeignKeyField(
+        'model.interfaz_audio.InterfazAudio',
         backref='personalizaciones',
         column_name='ID_Interfaz',
-        on_delete='CASCADE',
-        deferred_class='model.interfaz_audio.InterfazAudio'
+        on_delete='CASCADE'
     )
     
     class Meta:
