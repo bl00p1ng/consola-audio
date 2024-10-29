@@ -84,15 +84,12 @@ def initialize_database(db_path: str = 'db/Base_De_Datos.db') -> SqliteDatabase:
 def database_connection() -> Generator[SqliteDatabase, None, None]:
     """
     Context manager para manejar la conexión a la base de datos.
-    
-    Garantiza que la conexión se abre y cierra apropiadamente, y maneja
-    las transacciones automáticamente.
-    
-    Yields:
-        SqliteDatabase: Instancia de la base de datos conectada.
     """
+    # Asegurarse de que `database_proxy` ha sido inicializado.
+    if not database_proxy.obj:
+        raise RuntimeError("Database proxy has not been initialized. Call initialize_database() first.")
+
     database = database_proxy.obj
-    
     if database.is_closed():
         database.connect()
     
