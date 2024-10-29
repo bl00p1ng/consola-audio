@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional
 from datetime import datetime
 
-from model.base import initialize_database, create_tables
+from model.base import initialize_database
 from model.frecuencia import Frecuencia
 from model.tipo import Tipo
 from model.fuente import Fuente, Clasifica, Maneja
@@ -14,31 +14,8 @@ from model.canal import Canal
 from model.configuracion import Configuracion, Establece, Conectado
 from model.usuario import Usuario, Personaliza
 
-# Inicializar la base de datos
+# Inicializar la base de datos existente
 db = initialize_database()
-
-# Lista de todos los modelos para crear las tablas
-MODELS = [
-    Usuario,
-    InterfazAudio,
-    Frecuencia,
-    InterfazFrecuencia,
-    Tipo,
-    Fuente,
-    Clasifica,
-    Maneja,
-    Canal,
-    Entrada,
-    Permite,
-    Dispositivo,
-    Configuracion,
-    Establece,
-    Conectado,
-    Personaliza,
-]
-
-# Crear las tablas
-# create_tables(MODELS)
 
 # Configurar logging
 logging.basicConfig(
@@ -79,48 +56,37 @@ def custom_css():
     </style>
     """
 
-def inicializar_aplicacion():
-    """
-    Inicializa la aplicación y la base de datos.
-    """
-    try:
-        # Inicializar la base de datos
-        database = initialize_database()
-        logger.info("Base de datos inicializada correctamente")
-        return database
-    except Exception as e:
-        logger.error(f"Error al inicializar la aplicación: {e}")
-        st.error("Error al inicializar la aplicación. Por favor, contacte al administrador.")
-        return None
-
 def obtener_usuarios() -> List[Usuario]:
     """
     Obtiene todos los usuarios del sistema.
     """
-    with database_connection():
+    with db.connection_context():
         return list(Usuario.select())
 
 def obtener_configuracion_usuario(usuario: Usuario) -> Optional[Configuracion]:
     """
     Obtiene la última configuración del usuario.
     """
-    with database_connection():
+    with db.connection_context():
         try:
             return (Configuracion
                    .select()
-                   .join(Personaliza)
-                   .where(Personaliza.usuario == usuario)
+                   .join(
+                       Personaliza,
+                       on=(Configuracion.id_configuracion == Personaliza.configuracion)
+                   )
+                   .where(Personaliza.usuario == usuario.id_usuario)
                    .order_by(Configuracion.fecha.desc())
                    .first())
         except Exception as e:
-            logger.error(f"Error al obtener configuración: {e}")
+            logger.error(f"Error al obtener configuración: {str(e)}")
             return None
 
 def obtener_parametros_canal(canal: Canal, configuracion: Configuracion) -> dict:
     """
     Obtiene los parámetros de un canal para una configuración específica.
     """
-    with database_connection():
+    with db.connection_context():
         try:
             establece = (Establece
                         .get((Establece.canal == canal) &
@@ -148,13 +114,8 @@ def main():
 
     st.title('Consola de Audio')
 
-    # Inicializar la base de datos
-    database = inicializar_aplicacion()
-    if not database:
-        return
-
     # Selección de usuario
-    with database_connection():
+    with db.connection_context():
         usuarios = obtener_usuarios()
         usuario_seleccionado = st.selectbox(
             'Selecciona un usuario:',
@@ -213,7 +174,7 @@ def main():
                         """, unsafe_allow_html=True)
                         
                         dispositivos = list(Dispositivo.select())
-                        dispositivo_actual = entrada.get_dispositivo_configuracion(configuracion.id_configuracion)
+                        dispositivo_actual = entrada.get_dispositivo_configuracion(configuracion.id)
                         st.selectbox(
                             'Dispositivo:',
                             options=dispositivos,

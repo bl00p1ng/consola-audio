@@ -36,6 +36,7 @@ class Canal(BaseModel):
         help_text="Identificador único del canal"
     )
     etiqueta = CharField(
+        column_name='Etiqueta',
         max_length=100,
         null=False,
         help_text="Etiqueta identificativa del canal"

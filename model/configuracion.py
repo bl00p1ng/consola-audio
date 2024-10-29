@@ -6,6 +6,7 @@ from peewee import (
     ForeignKeyField, 
     DeferredForeignKey,
     FloatField, 
+    IntegerField,
     BooleanField,
     Model
 )
@@ -35,19 +36,16 @@ class Configuracion(BaseModel):
         created_at (DateTimeField): Fecha y hora de creación
         updated_at (DateTimeField): Fecha y hora de última actualización
     """
+    id_configuracion = IntegerField(
+        primary_key=True,
+        column_name='ID_Configuracion',
+        help_text="Identificador único de la configuración"
+    )
     
     fecha = DateTimeField(
         default=datetime.now,
         index=True,
         help_text="Fecha y hora de la configuración"
-    )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
     )
 
     class Meta:
@@ -63,13 +61,14 @@ class Configuracion(BaseModel):
         Returns:
             Usuario: Usuario propietario de la configuración
         """
+        from model.usuario import Personaliza
         personaliza = (Personaliza
                       .select()
                       .where(Personaliza.configuracion == self)
                       .first())
         return personaliza.usuario if personaliza else None
 
-    def get_interfaz(self) -> 'interfaz_audio':
+    def get_interfaz(self):
         """
         Obtiene la interfaz de audio asociada a esta configuración.
         
@@ -230,6 +229,11 @@ class Conectado(BaseModel):
         backref='conectado_set',
         column_name='ID_Entrada',
         on_delete='CASCADE'
+    )
+    fecha = DateTimeField(
+        column_name='Fecha',
+        default=datetime.now,
+        help_text="Fecha y hora de conexión"
     )
 
     class Meta:

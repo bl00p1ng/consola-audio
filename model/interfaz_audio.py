@@ -58,14 +58,6 @@ class InterfazAudio(BaseModel):
         auto_round=True,
         help_text="Precio de la interfaz"
     )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
-    )
 
     class Meta:
         table_name = 'Interfaz_de_Audio'

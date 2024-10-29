@@ -107,20 +107,20 @@ def database_connection() -> Generator[SqliteDatabase, None, None]:
         if not database.is_closed():
             database.close()
 
-def create_tables(models: list) -> None:
-    """
-    Crea las tablas en la base de datos para los modelos especificados.
+# def create_tables(models: list) -> None:
+#     """
+#     Crea las tablas en la base de datos para los modelos especificados.
     
-    Args:
-        models (list): Lista de clases de modelos Peewee a crear.
+#     Args:
+#         models (list): Lista de clases de modelos Peewee a crear.
         
-    Raises:
-        RuntimeError: Si hay un error al crear las tablas.
-    """
-    try:
-        with database_connection() as db:
-            db.create_tables(models, safe=True)
-            logger.info("Tablas creadas exitosamente")
-    except Exception as e:
-        logger.error(f"Error al crear las tablas: {e}")
-        raise RuntimeError(f"No se pudieron crear las tablas: {e}")
+#     Raises:
+#         RuntimeError: Si hay un error al crear las tablas.
+#     """
+#     try:
+#         with database_connection() as db:
+#             db.create_tables(models, safe=True)
+#             logger.info("Tablas creadas exitosamente")
+#     except Exception as e:
+#         logger.error(f"Error al crear las tablas: {e}")
+#         raise RuntimeError(f"No se pudieron crear las tablas: {e}")

@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 from typing import List
 
-from peewee import CharField, DateTimeField, ForeignKeyField, DeferredForeignKey
+from peewee import CharField, DateTimeField, ForeignKeyField, DeferredForeignKey, IntegerField
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
@@ -22,24 +22,22 @@ class Usuario(BaseModel):
         created_at (DateTimeField): Fecha y hora de creación del usuario
         updated_at (DateTimeField): Fecha y hora de última actualización
     """
-    
+    id_usuario = IntegerField(
+        primary_key=True,
+        column_name='ID_Usuario',
+        help_text="Identificador único del usuario"
+    )
     email = CharField(
+        column_name='Email',
         unique=True,
         index=True,
         max_length=255,
         help_text="Email del usuario"
     )
     password = CharField(
+        column_name='contraseña',
         max_length=255,
         help_text="Contraseña hasheada del usuario"
-    )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación del usuario"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
     )
     
     # Configuración de la tabla
@@ -124,7 +122,7 @@ class Usuario(BaseModel):
         self.save()
         return True
     
-    def get_configuraciones(self) -> List['Configuracion']:
+    def get_configuraciones(self):
         """
         Obtiene todas las configuraciones asociadas al usuario.
         
@@ -137,7 +135,7 @@ class Usuario(BaseModel):
         return (Configuracion
                 .select()
                 .join(Personaliza)
-                .where(Personaliza.usuario == self))
+                .where(Personaliza.usuario == self.email))
     
     @staticmethod
     def is_valid_email(email: str) -> bool:
@@ -192,7 +190,11 @@ class Personaliza(BaseModel):
     """
     Modelo que representa la relación entre Usuario, Configuracion e InterfazAudio.
     """
-    
+    id_personaliza = IntegerField(
+        primary_key=True,
+        column_name='ID_Personaliza',
+        help_text="Identificador único de la personalización"
+    )
     usuario = ForeignKeyField(
         Usuario, 
         backref='personalizaciones',
