@@ -12,9 +12,9 @@ from peewee import (
 )
 
 from model.base import BaseModel
-from model.entrada import Permite
-from model.frecuencia import Frecuencia
-from model.fuente import Fuente
+# from model.entrada import Permite
+# from model.frecuencia import Frecuencia
+# from model.fuente import Fuente
 
 class InterfazAudio(BaseModel):
     """
@@ -100,6 +100,7 @@ class InterfazAudio(BaseModel):
             ValueError: Si algún parámetro requerido está vacío o es inválido
             DatabaseError: Si hay un error en la creación
         """
+        from model.frecuencia import Frecuencia, InterfazFrecuencia
         if not all([nombre_corto, modelo, nombre_comercial]):
             raise ValueError("Todos los campos de nombre son requeridos")
         
@@ -141,6 +142,7 @@ class InterfazAudio(BaseModel):
             DatabaseError: Si hay un error al agregar la entrada
         """
         from model.entrada import Entrada
+        from model.entrada import Permite
         try:
             Permite.create(
                 interfaz=self,
@@ -162,20 +164,20 @@ class InterfazAudio(BaseModel):
             for if_freq in self.interfaz_frecuencia_set
         ]
 
-    def get_entradas_disponibles(self) -> List['Entrada']:
+    def get_entradas_disponibles(self):
         """
         Obtiene todas las entradas disponibles para esta interfaz.
         
         Returns:
             List[Entrada]: Lista de entradas disponibles
         """
-        from model.entrada import Entrada
+        from model.entrada import Entrada, Permite
         return (Entrada
                 .select()
                 .join(Permite)
                 .where(Permite.interfaz == self))
 
-    def get_fuentes_soportadas(self) -> List['Fuente']:
+    def get_fuentes_soportadas(self):
         """
         Obtiene todas las fuentes de audio soportadas por esta interfaz.
         
@@ -188,7 +190,7 @@ class InterfazAudio(BaseModel):
                 .join(Maneja)
                 .where(Maneja.interfaz == self))
 
-    def get_configuraciones(self) -> List['Configuracion']:
+    def get_configuraciones(self):
         """
         Obtiene todas las configuraciones que utilizan esta interfaz.
         
@@ -287,6 +289,7 @@ class InterfazFrecuencia(BaseModel):
         interfaz (ForeignKeyField): Referencia a la interfaz de audio
         frecuencia (ForeignKeyField): Referencia a la frecuencia soportada
     """
+    from model.frecuencia import Frecuencia
     
     interfaz = ForeignKeyField(
         InterfazAudio,
@@ -295,7 +298,7 @@ class InterfazFrecuencia(BaseModel):
         on_delete='CASCADE'
     )
     frecuencia = ForeignKeyField(
-        'Frecuencia',
+        Frecuencia,
         backref='interfaz_frecuencia_set',
         column_name='ID_Frecuencia',
         on_delete='CASCADE'

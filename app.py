@@ -3,15 +3,42 @@ import logging
 from typing import List, Optional
 from datetime import datetime
 
-from model.base import initialize_database, database_connection
-from model.usuario import Usuario, Personaliza
-from model.configuracion import Configuracion, Establece, Conectado
-from model.dispositivo import Dispositivo
-from model.canal import Canal
-from model.fuente import Fuente
-from model.tipo import Tipo
+from model.base import initialize_database, create_tables
 from model.frecuencia import Frecuencia
-from model.interfaz_audio import InterfazAudio
+from model.tipo import Tipo
+from model.fuente import Fuente, Clasifica, Maneja
+from model.dispositivo import Dispositivo
+from model.entrada import Entrada, Permite
+from model.interfaz_audio import InterfazAudio, InterfazFrecuencia
+from model.canal import Canal
+from model.configuracion import Configuracion, Establece, Conectado
+from model.usuario import Usuario, Personaliza
+
+# Inicializar la base de datos
+db = initialize_database()
+
+# Lista de todos los modelos para crear las tablas
+MODELS = [
+    Usuario,
+    InterfazAudio,
+    Frecuencia,
+    InterfazFrecuencia,
+    Tipo,
+    Fuente,
+    Clasifica,
+    Maneja,
+    Canal,
+    Entrada,
+    Permite,
+    Dispositivo,
+    Configuracion,
+    Establece,
+    Conectado,
+    Personaliza,
+]
+
+# Crear las tablas
+# create_tables(MODELS)
 
 # Configurar logging
 logging.basicConfig(

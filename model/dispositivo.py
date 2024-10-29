@@ -8,10 +8,10 @@ from peewee import (
     DatabaseError
 )
 
-from model.configuracion import Configuracion
-from model.entrada import Entrada
+# from model.configuracion import Configuracion
+# from model.entrada import Entrada
 from model.base import BaseModel
-from model.configuracion import Conectado
+# from model.configuracion import Conectado
 
 class Dispositivo(BaseModel):
     """
@@ -90,7 +90,7 @@ class Dispositivo(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al crear el dispositivo: {str(e)}")
 
-    def get_entradas_activas(self, configuracion_id: Optional[int] = None) -> List['Entrada']:
+    def get_entradas_activas(self, configuracion_id: Optional[int] = None):
         """
         Obtiene las entradas a las que está conectado este dispositivo.
         
@@ -102,6 +102,7 @@ class Dispositivo(BaseModel):
             List[Entrada]: Lista de entradas conectadas al dispositivo
         """
         from model.entrada import Entrada
+        from model.configuracion import Conectado
         
         query = (Entrada
                 .select()
@@ -133,6 +134,7 @@ class Dispositivo(BaseModel):
         """
         try:
             from model.entrada import Entrada
+            from model.configuracion import Conectado
             entrada = Entrada.get_by_id(entrada_id)
             
             Conectado.create(
@@ -160,6 +162,7 @@ class Dispositivo(BaseModel):
         Returns:
             bool: True si la desconexión fue exitosa
         """
+        from model.configuracion import Conectado
         try:
             return bool(Conectado.delete().where(
                 (Conectado.dispositivo == self) &
@@ -169,14 +172,14 @@ class Dispositivo(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al desconectar dispositivo: {str(e)}")
 
-    def get_configuraciones(self) -> List['Configuracion']:
+    def get_configuraciones(self):
         """
         Obtiene todas las configuraciones en las que se usa este dispositivo.
         
         Returns:
             List[Configuracion]: Lista de configuraciones que usan este dispositivo
         """
-        from model.configuracion import Configuracion
+        from model.configuracion import Configuracion, Conectado
         return (Configuracion
                 .select()
                 .join(Conectado)
@@ -190,6 +193,7 @@ class Dispositivo(BaseModel):
         Returns:
             bool: True si el dispositivo está en uso
         """
+        from model.configuracion import Conectado
         return (Conectado
                 .select()
                 .where(Conectado.dispositivo == self)

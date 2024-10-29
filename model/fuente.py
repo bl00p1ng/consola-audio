@@ -4,14 +4,15 @@ from datetime import datetime
 from peewee import (
     IntegerField,
     ForeignKeyField,
+    DeferredForeignKey,
     DateTimeField,
     DatabaseError
 )
 
-from model.canal import Canal
-from model.interfaz_audio import InterfazAudio
+# from model.canal import Canal
+# from model.interfaz_audio import InterfazAudio
 from model.base import BaseModel
-from model.tipo import Tipo
+# from model.tipo import Tipo
 
 class Fuente(BaseModel):
     """
@@ -74,7 +75,7 @@ class Fuente(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al crear la fuente: {str(e)}")
 
-    def get_tipo(self) -> Optional['Tipo']:
+    def get_tipo(self):
         """
         Obtiene el tipo asociado a esta fuente.
         
@@ -114,7 +115,7 @@ class Fuente(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al establecer el tipo: {str(e)}")
 
-    def get_canales(self) -> List['Canal']:
+    def get_canales(self):
         """
         Obtiene todos los canales que utilizan esta fuente.
         
@@ -126,14 +127,14 @@ class Fuente(BaseModel):
                 .select()
                 .where(Canal.fuente == self))
 
-    def get_interfaces_compatibles(self) -> List['InterfazAudio']:
+    def get_interfaces_compatibles(self):
         """
         Obtiene todas las interfaces de audio compatibles con esta fuente.
         
         Returns:
             List[InterfazAudio]: Lista de interfaces compatibles
         """
-        from model.interfaz_audio import InterfazAudio, Maneja
+        from model.interfaz_audio import InterfazAudio
         return (InterfazAudio
                 .select()
                 .join(Maneja)
@@ -232,7 +233,7 @@ class Clasifica(BaseModel):
         column_name='ID_Fuente',
         on_delete='CASCADE'
     )
-    tipo = ForeignKeyField(
+    tipo = DeferredForeignKey(
         'Tipo',
         backref='clasifica_set',
         column_name='ID_Tipo',
@@ -262,7 +263,7 @@ class Maneja(BaseModel):
         column_name='ID_Fuente',
         on_delete='CASCADE'
     )
-    interfaz = ForeignKeyField(
+    interfaz = DeferredForeignKey(
         'InterfazAudio',
         backref='maneja_set',
         column_name='ID_Interfaz',

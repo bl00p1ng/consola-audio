@@ -173,7 +173,7 @@ class Establece(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    canal = ForeignKeyField(
+    canal = DeferredForeignKey(
         'Canal',
         backref='establece_set',
         column_name='Codigo_Canal',
@@ -219,13 +219,13 @@ class Conectado(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    dispositivo = ForeignKeyField(
+    dispositivo = DeferredForeignKey(
         'Dispositivo',
         backref='conectado_set',
         column_name='ID_Dispositivo',
         on_delete='CASCADE'
     )
-    entrada = ForeignKeyField(
+    entrada = DeferredForeignKey(
         'Entrada',
         backref='conectado_set',
         column_name='ID_Entrada',

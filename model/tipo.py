@@ -8,10 +8,10 @@ from peewee import (
     DatabaseError
 )
 
-from model.canal import Canal
-from model.fuente import Fuente
+# from model.canal import Canal
+# from model.fuente import Fuente
 from model.base import BaseModel
-from model.fuente import Clasifica
+# from model.fuente import Clasifica
 
 class Tipo(BaseModel):
     """
@@ -95,20 +95,20 @@ class Tipo(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al crear el tipo: {str(e)}")
 
-    def get_fuentes(self) -> List['Fuente']:
+    def get_fuentes(self):
         """
         Obtiene todas las fuentes clasificadas con este tipo.
         
         Returns:
             List[Fuente]: Lista de fuentes asociadas a este tipo
         """
-        from model.fuente import Fuente
+        from model.fuente import Fuente, Clasifica
         return (Fuente
                 .select()
                 .join(Clasifica)
                 .where(Clasifica.tipo == self))
 
-    def get_canales_asociados(self) -> List['Canal']:
+    def get_canales_asociados(self):
         """
         Obtiene todos los canales que utilizan fuentes de este tipo.
         
@@ -116,7 +116,7 @@ class Tipo(BaseModel):
             List[Canal]: Lista de canales que usan fuentes de este tipo
         """
         from model.canal import Canal
-        from model.fuente import Fuente
+        from model.fuente import Fuente, Clasifica
         return (Canal
                 .select()
                 .join(Fuente)

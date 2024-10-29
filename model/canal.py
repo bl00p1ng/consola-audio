@@ -40,7 +40,7 @@ class Canal(BaseModel):
         null=False,
         help_text="Etiqueta identificativa del canal"
     )
-    fuente = ForeignKeyField(
+    fuente = DeferredForeignKey(
         'Fuente',
         backref='canales',
         column_name='ID_Fuente',
@@ -95,7 +95,6 @@ class Canal(BaseModel):
             dict: Diccionario con los parámetros del canal
         """
         from model.configuracion import Establece
-
         try:
             establece = (Establece
                         .select()
@@ -147,6 +146,7 @@ class Canal(BaseModel):
             raise ValueError("El volumen debe estar entre 0.0 y 1.0")
 
         try:
+            from model.configuracion import Establece
             establece, created = Establece.get_or_create(
                 canal=self,
                 configuracion=configuracion_id,
@@ -173,7 +173,7 @@ class Canal(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al establecer parámetros: {str(e)}")
 
-    def get_configuraciones(self) -> List['Configuracion']:
+    def get_configuraciones(self):
         """
         Obtiene todas las configuraciones que utilizan este canal.
         
@@ -195,8 +195,9 @@ class Canal(BaseModel):
         Returns:
             Optional[str]: Nombre del tipo de fuente o None si no tiene
         """
-        if self.fuente and self.fuente.tipo:
-            return self.fuente.tipo.nombre
+        if self.fuente:
+            tipo = self.fuente.get_tipo()
+            return tipo.nombre if tipo else None
         return None
 
     def to_dict(self) -> dict:

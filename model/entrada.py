@@ -13,7 +13,7 @@ from peewee import (
 from model.base import BaseModel
 # from model.configuracion import Conectado, Configuracion
 # from model.dispositivo import Dispositivo
-from model.interfaz_audio import InterfazAudio
+# from model.interfaz_audio import InterfazAudio
 
 class Entrada(BaseModel):
     """
@@ -80,7 +80,7 @@ class Entrada(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al crear la entrada: {str(e)}")
 
-    def get_dispositivo_configuracion(self, configuracion_id: int) -> Optional['Dispositivo']:
+    def get_dispositivo_configuracion(self, configuracion_id: int):
         """
         Obtiene el dispositivo conectado a esta entrada en una configuración específica.
         
@@ -124,6 +124,7 @@ class Entrada(BaseModel):
         """
         try:
             from model.dispositivo import Dispositivo
+            from model.configuracion import Conectado
             
             # Eliminar conexión existente si la hay
             Conectado.delete().where(
@@ -145,20 +146,20 @@ class Entrada(BaseModel):
         except DatabaseError as e:
             raise DatabaseError(f"Error al establecer dispositivo: {str(e)}")
 
-    def get_interfaces_compatibles(self) -> List['InterfazAudio']:
+    def get_interfaces_compatibles(self):
         """
         Obtiene todas las interfaces de audio compatibles con esta entrada.
         
         Returns:
             List[InterfazAudio]: Lista de interfaces de audio compatibles
         """
-        from model.interfaz_audio import InterfazAudio, Permite
+        from model.interfaz_audio import InterfazAudio
         return (InterfazAudio
                 .select()
                 .join(Permite)
                 .where(Permite.entrada == self))
 
-    def get_configuraciones(self) -> List['Configuracion']:
+    def get_configuraciones(self):
         """
         Obtiene todas las configuraciones que utilizan esta entrada.
         
@@ -231,6 +232,7 @@ class Entrada(BaseModel):
         Returns:
             List[Entrada]: Lista de entradas asociadas al dispositivo
         """
+        from model.configuracion import Conectado
         return (cls
                 .select()
                 .join(Conectado)
@@ -259,7 +261,7 @@ class Permite(BaseModel):
         column_name='ID_Entrada',
         on_delete='CASCADE'
     )
-    interfaz = ForeignKeyField(
+    interfaz = DeferredForeignKey(
         'InterfazAudio',
         backref='permite_set',
         column_name='ID_Interfaz',
@@ -269,5 +271,5 @@ class Permite(BaseModel):
     class Meta:
         table_name = 'Permite'
         indexes = (
-            (('entrada', 'interfaz'), True),  # Índice único
+            (('entrada', 'interfaz'), True),
         )

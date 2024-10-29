@@ -199,13 +199,13 @@ class Personaliza(BaseModel):
         column_name='ID_Usuario',
         on_delete='CASCADE'
     )
-    configuracion = ForeignKeyField(
+    configuracion = DeferredForeignKey(
         'Configuracion',
         backref='personalizaciones',
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    interfaz = ForeignKeyField(
+    interfaz = DeferredForeignKey(
         'InterfazAudio',
         backref='personalizaciones',
         column_name='ID_Interfaz',

@@ -8,7 +8,7 @@ from peewee import (
     DatabaseError
 )
 
-from model.interfaz_audio import InterfazAudio
+# from model.interfaz_audio import InterfazAudio
 from model.base import BaseModel
 
 class Frecuencia(BaseModel):
