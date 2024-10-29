@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Generator
 
-from peewee import Model, SqliteDatabase, DatabaseProxy
+from peewee import Model, SqliteDatabase, DatabaseProxy, DeferredForeignKey
 
 # Configurar logging
 logging.basicConfig(

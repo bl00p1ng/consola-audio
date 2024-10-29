@@ -2,12 +2,11 @@ from datetime import datetime
 import re
 from typing import List
 
-from peewee import CharField, DateTimeField, SQL, ForeignKeyField
+from peewee import CharField, DateTimeField, ForeignKeyField, DeferredForeignKey
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
-from model.base import BaseModel, database_proxy
-from model.configuracion import Configuracion
+from model.base import BaseModel
 
 class Usuario(BaseModel):
     """
@@ -132,7 +131,9 @@ class Usuario(BaseModel):
         Returns:
             List[Configuracion]: Lista de configuraciones del usuario
         """
-        # from models.configuracion import Configuracion
+        from model.configuracion import Configuracion
+        from model.usuario import Personaliza
+
         return (Configuracion
                 .select()
                 .join(Personaliza)

@@ -11,8 +11,6 @@ from peewee import (
     DatabaseError
 )
 
-from model.configuracion import Configuracion
-from model.entrada import Entrada
 from model.base import BaseModel
 from model.entrada import Permite
 from model.frecuencia import Frecuencia

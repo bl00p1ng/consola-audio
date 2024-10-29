@@ -1,11 +1,24 @@
 import streamlit as st
-from model.dao.FrecuenciaDAO import FrecuenciaDAO
-from model.dao.UsuarioDAO import UsuarioDAO
-from model.dao.ConfiguracionDAO import ConfiguracionDAO
-from model.dao.DispositivoDAO import DispositivoDAO
-from model.dao.CanalDAO import CanalDAO
-from model.dao.FuenteDAO import FuenteDAO
-from model.dao.TipoDAO import TipoDAO
+import logging
+from typing import List, Optional
+from datetime import datetime
+
+from model.base import initialize_database, database_connection
+from model.usuario import Usuario, Personaliza
+from model.configuracion import Configuracion, Establece, Conectado
+from model.dispositivo import Dispositivo
+from model.canal import Canal
+from model.fuente import Fuente
+from model.tipo import Tipo
+from model.frecuencia import Frecuencia
+from model.interfaz_audio import InterfazAudio
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Función para crear estilos personalizados
 def custom_css():
@@ -39,164 +52,207 @@ def custom_css():
     </style>
     """
 
-# Inicializar DAOs
-usuario_dao = UsuarioDAO()
-configuracion_dao = ConfiguracionDAO()
-dispositivo_dao = DispositivoDAO()
-canal_dao = CanalDAO()
-fuente_dao = FuenteDAO()
-tipo_dao = TipoDAO()
-frecuencia_dao = FrecuenciaDAO()
+def inicializar_aplicacion():
+    """
+    Inicializa la aplicación y la base de datos.
+    """
+    try:
+        # Inicializar la base de datos
+        database = initialize_database()
+        logger.info("Base de datos inicializada correctamente")
+        return database
+    except Exception as e:
+        logger.error(f"Error al inicializar la aplicación: {e}")
+        st.error("Error al inicializar la aplicación. Por favor, contacte al administrador.")
+        return None
 
-# Configuración de la página
-st.set_page_config(page_title="Consola de Audio", layout="wide")
+def obtener_usuarios() -> List[Usuario]:
+    """
+    Obtiene todos los usuarios del sistema.
+    """
+    with database_connection():
+        return list(Usuario.select())
 
-# Inyectar CSS personalizado
-st.markdown(custom_css(), unsafe_allow_html=True)
+def obtener_configuracion_usuario(usuario: Usuario) -> Optional[Configuracion]:
+    """
+    Obtiene la última configuración del usuario.
+    """
+    with database_connection():
+        try:
+            return (Configuracion
+                   .select()
+                   .join(Personaliza)
+                   .where(Personaliza.usuario == usuario)
+                   .order_by(Configuracion.fecha.desc())
+                   .first())
+        except Exception as e:
+            logger.error(f"Error al obtener configuración: {e}")
+            return None
 
-st.title('Consola de Audio')
+def obtener_parametros_canal(canal: Canal, configuracion: Configuracion) -> dict:
+    """
+    Obtiene los parámetros de un canal para una configuración específica.
+    """
+    with database_connection():
+        try:
+            establece = (Establece
+                        .get((Establece.canal == canal) &
+                             (Establece.configuracion == configuracion)))
+            return {
+                'Volumen': establece.volumen,
+                'Solo': establece.solo,
+                'Mute': establece.mute,
+                'Link': establece.link
+            }
+        except Establece.DoesNotExist:
+            return {
+                'Volumen': 0,
+                'Solo': False,
+                'Mute': False,
+                'Link': False
+            }
 
-# Selección de usuario
-usuarios = usuario_dao.getAll()
-usuario_seleccionado = st.selectbox(
-    'Selecciona un usuario:',
-    options=usuarios,
-    format_func=lambda x: x.getEmail()
-)
+def main():
+    # Configuración de la página
+    st.set_page_config(page_title="Consola de Audio", layout="wide")
 
-if usuario_seleccionado:
-    # Obtener la última configuración del usuario
-    configuraciones = configuracion_dao.getConfiguracionesPorUsuario(usuario_seleccionado)
-    if configuraciones:
-        configuracion = configuraciones[0]
-        
-        # Mostrar información de la interfaz de audio
-        interfaz = configuracion.getInterfaz()
-        st.markdown(f"""
-        <div class="custom-card">
-            <div class="card-header">
-                <h3>Interfaz de Audio: {interfaz.nombreComercial}</h3>
-            </div>
-            <div class="card-body">
-                <p>
-                    <b>Modelo:</b> {interfaz.modelo}
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    # Inyectar CSS personalizado
+    st.markdown(custom_css(), unsafe_allow_html=True)
 
-        # Selector de frecuencia
-        todas_frecuencias = frecuencia_dao.getAll()
-        frecuencia_actual = interfaz.frecuencia
-        nueva_frecuencia = st.selectbox(
-            'Frecuencia (kHz):',
-            options=todas_frecuencias,
-            index=todas_frecuencias.index(frecuencia_actual) if frecuencia_actual in todas_frecuencias else 0,
-            format_func=lambda x: f"{x.valor} kHz"
+    st.title('Consola de Audio')
+
+    # Inicializar la base de datos
+    database = inicializar_aplicacion()
+    if not database:
+        return
+
+    # Selección de usuario
+    with database_connection():
+        usuarios = obtener_usuarios()
+        usuario_seleccionado = st.selectbox(
+            'Selecciona un usuario:',
+            options=usuarios,
+            format_func=lambda x: x.email
         )
-        
-        # Contenedor para entradas y canales
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader('Entradas')
-            for entrada in configuracion.getEntradas():
+
+        if usuario_seleccionado:
+            # Obtener la última configuración del usuario
+            configuracion = obtener_configuracion_usuario(usuario_seleccionado)
+            
+            if configuracion:
+                # Obtener la interfaz de audio
+                interfaz = configuracion.get_interfaz()
+                
+                # Mostrar información de la interfaz de audio
                 st.markdown(f"""
                 <div class="custom-card">
                     <div class="card-header">
-                        <h3>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
-                            </svg>
-                            Entrada {entrada.id}
-                        </h3>
+                        <h3>Interfaz de Audio: {interfaz.nombre_comercial}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <b>Modelo:</b> {interfaz.modelo}
+                        </p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                dispositivo = st.selectbox(
-                    'Dispositivo:',
-                    options=dispositivo_dao.getAll(),
-                    index=dispositivo_dao.getAll().index(entrada.dispositivo) if entrada.dispositivo in dispositivo_dao.getAll() else 0,
-                    format_func=lambda x: x.Nombre,
-                    key=f'dispositivo_{entrada.id}'
+
+                # Selector de frecuencia
+                frecuencias = list(Frecuencia.select())
+                frecuencia_actual = interfaz.frecuencia if hasattr(interfaz, 'frecuencia') else None
+                nueva_frecuencia = st.selectbox(
+                    'Frecuencia (kHz):',
+                    options=frecuencias,
+                    index=frecuencias.index(frecuencia_actual) if frecuencia_actual in frecuencias else 0,
+                    format_func=lambda x: f"{x.valor} kHz"
                 )
-        
-        with col2:
-            st.subheader('Canales')
-            for canal in configuracion.getCanales():
-                establece = canal_dao.getParametrosCanal(canal.id, configuracion.getID())
-                st.markdown(f"""
-                <div class="custom-card">
-                    <div class="card-header">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
-                        </svg>
-                        <h3>Canal {canal.id}</h3>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Selector de fuente
-                fuente = st.selectbox(
-                    'Fuente:',
-                    options=fuente_dao.getAll(),
-                    index=fuente_dao.getAll().index(canal.fuente) if canal.fuente in fuente_dao.getAll() else 0,
-                    format_func=lambda x: x.tipo.nombre if x.tipo else "Sin tipo",
-                    key=f'fuente_{canal.id}'
-                )
-                
-                # Selector de tipo basado en la fuente seleccionada
-                if fuente:
-                    tipos_asociados = fuente_dao.getFuentesPorTipo(fuente.tipo)
-                    tipo_actual = canal.fuente.tipo if canal.fuente else None
-                    tipo = st.selectbox(
-                        'Tipo:',
-                        options=tipos_asociados,
-                        index=tipos_asociados.index(tipo_actual) if tipo_actual in tipos_asociados else 0,
-                        format_func=lambda x: x.tipo.id if x.tipo else "Sin tipo",
-                        key=f'tipo_{canal.id}'
-                    )
-                
-                volumen = st.slider('Volumen:', 0, 100, establece['Volumen'], 1, key=f'volumen_{canal.id}')
-                col1, col2, col3 = st.columns(3)
+
+                # Contenedor para entradas y canales
+                col1, col2 = st.columns(2)
+
+                # Columna de Entradas
                 with col1:
-                    solo = st.checkbox('Solo', establece['Solo'], key=f'solo_{canal.id}')
+                    st.subheader('Entradas')
+                    for entrada in configuracion.get_entradas():
+                        st.markdown(f"""
+                        <div class="custom-card">
+                            <div class="card-header">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
+                                </svg>
+                                <h3>Entrada {entrada.id_entrada}</h3>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        dispositivos = list(Dispositivo.select())
+                        dispositivo_actual = entrada.get_dispositivo_configuracion(configuracion.id_configuracion)
+                        st.selectbox(
+                            'Dispositivo:',
+                            options=dispositivos,
+                            index=dispositivos.index(dispositivo_actual) if dispositivo_actual in dispositivos else 0,
+                            format_func=lambda x: x.nombre,
+                            key=f'dispositivo_{entrada.id_entrada}'
+                        )
+
+                # Columna de Canales
                 with col2:
-                    mute = st.checkbox('Mute', establece['Mute'], key=f'mute_{canal.id}')
-                with col3:
-                    link = st.checkbox('Link', establece['Link'], key=f'link_{canal.id}')
+                    st.subheader('Canales')
+                    for canal in configuracion.get_canales():
+                        parametros = obtener_parametros_canal(canal, configuracion)
+                        
+                        st.markdown(f"""
+                        <div class="custom-card">
+                            <div class="card-header">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
+                                </svg>
+                                <h3>Canal {canal.codigo_canal}</h3>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
-        # EDICIÓN DE CONFIGURACIÓN DESHABILITADA
-        # if st.button('Guardar Configuración'):
-        #     try:
-        #         # Actualizar frecuencia
-        #         interfaz.setFrecuencia(nueva_frecuencia)
-                
-        #         # Actualizar entradas
-        #         for entrada in configuracion.getEntradas():
-        #             nuevo_dispositivo = st.session_state[f'dispositivo_{entrada.id}']
-        #             entrada.setDispositivo(nuevo_dispositivo)
-                
-        #         # Actualizar canales
-        #         for canal in configuracion.getCanales():
-        #             establece = canal_dao.getParametrosCanal(canal.id, configuracion.getID())
-        #             nueva_fuente = st.session_state[f'fuente_{canal.id}']
-        #             nuevo_tipo = st.session_state[f'tipo_{canal.id}']
-        #             establece['Volumen'] = st.session_state[f'volumen_{canal.id}']
-        #             establece['Solo'] = st.session_state[f'solo_{canal.id}']
-        #             establece['Mute'] = st.session_state[f'mute_{canal.id}']
-        #             establece['Link'] = st.session_state[f'link_{canal.id}']
-                    
-        #             nueva_fuente.setTipo(nuevo_tipo)
-        #             canal.setFuente(nueva_fuente)
-        #             canal_dao.actualizarParametrosCanal(canal.id, configuracion.getID(), establece)
-                
-        #         if configuracion_dao.updateConfiguracion(configuracion):
-        #             st.success('Configuración guardada exitosamente!')
-        #         else:
-        #             st.error('Error al guardar la configuración. Por favor, intenta de nuevo.')
-        #     except Exception as e:
-        #         st.error(f'Ocurrió un error al guardar la configuración: {str(e)}')
+                        fuentes = list(Fuente.select())
+                        fuente_actual = canal.fuente
+                        fuente = st.selectbox(
+                            'Fuente:',
+                            options=fuentes,
+                            index=fuentes.index(fuente_actual) if fuente_actual in fuentes else 0,
+                            format_func=lambda x: x.get_tipo().nombre if x.get_tipo() else "Sin tipo",
+                            key=f'fuente_{canal.codigo_canal}'
+                        )
 
-else:
-    st.info('Por favor, selecciona un usuario para ver y editar su configuración.')
+                        if fuente:
+                            tipos = list(Tipo.select())
+                            tipo_actual = fuente.get_tipo()
+                            tipo = st.selectbox(
+                                'Tipo:',
+                                options=tipos,
+                                index=tipos.index(tipo_actual) if tipo_actual in tipos else 0,
+                                format_func=lambda x: x.nombre,
+                                key=f'tipo_{canal.codigo_canal}'
+                            )
+
+                        volumen = st.slider(
+                            'Volumen:',
+                            0, 100,
+                            parametros['Volumen'],
+                            1,
+                            key=f'volumen_{canal.codigo_canal}'
+                        )
+
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            solo = st.checkbox('Solo', parametros['Solo'], key=f'solo_{canal.codigo_canal}')
+                        with col2:
+                            mute = st.checkbox('Mute', parametros['Mute'], key=f'mute_{canal.codigo_canal}')
+                        with col3:
+                            link = st.checkbox('Link', parametros['Link'], key=f'link_{canal.codigo_canal}')
+
+            else:
+                st.info('Este usuario no tiene configuraciones.')
+        else:
+            st.info('Por favor, selecciona un usuario para ver y editar su configuración.')
+
+if __name__ == "__main__":
+    main()

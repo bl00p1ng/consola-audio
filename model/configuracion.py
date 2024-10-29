@@ -9,11 +9,10 @@ from peewee import (
     Model
 )
 
-from model import interfaz_audio
 from model.base import BaseModel
 from model.canal import Canal
 from model.entrada import Entrada
-from model.usuario import Usuario, Personaliza
+from model.usuario import Usuario
 
 class Configuracion(BaseModel):
     """
@@ -69,6 +68,7 @@ class Configuracion(BaseModel):
         Returns:
             InterfazAudio: Interfaz de audio asociada
         """
+        from model.usuario import Personaliza
         personaliza = (Personaliza
                       .select()
                       .where(Personaliza.configuracion == self)
