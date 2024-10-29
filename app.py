@@ -131,12 +131,15 @@ def guardar_cambios(configuracion: Configuracion, frecuencia: Frecuencia, entrad
             # 1. Actualizar la frecuencia de la interfaz
             interfaz = configuracion.get_interfaz()
             if interfaz:
+                # Eliminar las frecuencias existentes
                 InterfazFrecuencia.delete().where(
-                    InterfazFrecuencia.interfaz == interfaz
+                    InterfazFrecuencia.interfaz == interfaz.id_interfaz
                 ).execute()
+                
+                # Crear nueva relación con la frecuencia seleccionada
                 InterfazFrecuencia.create(
-                    interfaz=interfaz,
-                    frecuencia=frecuencia
+                    interfaz=interfaz.id_interfaz,
+                    frecuencia=frecuencia.id_frecuencia
                 )
 
             # 2. Actualizar dispositivos en entradas
@@ -236,8 +239,21 @@ def main():
                 """, unsafe_allow_html=True)
 
             # Cargar frecuencias
-            frecuencias = list(Frecuencia.select())
-            frecuencia_actual = interfaz.frecuencia if hasattr(interfaz, 'frecuencia') else None
+            with database_connection():
+                frecuencias = list(Frecuencia.select())
+                interfaz = configuracion.get_interfaz()
+                # Obtener la frecuencia actual de la interfaz
+                frecuencia_actual = None
+                if interfaz:
+                    try:
+                        frecuencia_actual = (InterfazFrecuencia
+                                            .select(InterfazFrecuencia.frecuencia)
+                                            .where(InterfazFrecuencia.interfaz == interfaz.id_interfaz)
+                                            .get()
+                                            .frecuencia)
+                    except InterfazFrecuencia.DoesNotExist:
+                        pass
+
             nueva_frecuencia = st.selectbox(
                 'Frecuencia (kHz):',
                 options=frecuencias,
