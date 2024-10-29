@@ -16,6 +16,7 @@ from model.entrada import Entrada
 from model.base import BaseModel
 from model.entrada import Permite
 from model.frecuencia import Frecuencia
+from model.fuente import Fuente
 
 class InterfazAudio(BaseModel):
     """
