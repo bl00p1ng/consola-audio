@@ -11,7 +11,7 @@ from peewee import (
     DatabaseError
 )
 
-from model.base import BaseModel
+from model.base import BaseModel, database_connection
 # from model.configuracion import Configuracion, Establece
 
 class Canal(BaseModel):
@@ -85,20 +85,22 @@ class Canal(BaseModel):
         Returns:
             Optional[Fuente]: Fuente asociada al canal, o None si no tiene
         """
+        from model.fuente import Fuente
         from model.configuracion import Establece
-        # Obtener id de la fuente asociada
-        try:
-            establece = (Establece
-                        .select()
-                        .where(Establece.canal == self.codigo_canal)
-                        .get())
-            
-            # Obtener los datos completos de la fuente
-            from model.fuente import Fuente
-
-            return Fuente.get_by_id(establece.fuente)
-        except Establece.DoesNotExist:
-            return None
+        with database_connection():
+            try:
+                establece = (Establece
+                            .select(Establece, Fuente)
+                            .join(
+                                Fuente,
+                                on=(Establece.fuente == Fuente.id_fuente)  # Especificamos la condición de join
+                            )
+                            .where(Establece.canal == self.codigo_canal)
+                            .first())
+                return establece.fuente if establece else None
+            except Exception as e:
+                print(f"Error al obtener fuente del canal: {e}")
+                return None
 
 
     def get_parametros_configuracion(self, configuracion_id: int) -> dict:

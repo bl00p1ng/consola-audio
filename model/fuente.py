@@ -11,7 +11,7 @@ from peewee import (
 
 # from model.canal import Canal
 # from model.interfaz_audio import InterfazAudio
-from model.base import BaseModel
+from model.base import BaseModel, database_connection
 # from model.tipo import Tipo
 
 class Fuente(BaseModel):
@@ -74,11 +74,21 @@ class Fuente(BaseModel):
         Returns:
             Optional[Tipo]: Tipo de la fuente o None si no tiene tipo
         """
-        clasifica = (Clasifica
-                    .select()
-                    .where(Clasifica.fuente == self)
-                    .first())
-        return clasifica.tipo if clasifica else None
+        from model.tipo import Tipo
+        with database_connection():
+            try:
+                clasifica = (Clasifica
+                            .select(Clasifica, Tipo)
+                            .join(
+                                Tipo,
+                                on=(Clasifica.tipo == Tipo.id_tipo)  # Especificamos explícitamente la condición de join
+                            )
+                            .where(Clasifica.fuente == self.id_fuente)
+                            .first())
+                return clasifica.tipo if clasifica else None
+            except Exception as e:
+                print(f"Error al obtener tipo de fuente: {e}")
+                return None
 
     def set_tipo(self, tipo_id: int) -> bool:
         """
@@ -229,11 +239,13 @@ class Clasifica(BaseModel):
         Fuente,
         backref='clasifica_set',
         column_name='ID_Fuente',
+        field='id_fuente',
         on_delete='CASCADE'
     )
     tipo = DeferredForeignKey(
         'Tipo',
         backref='clasifica_set',
+        field='id_tipo',
         column_name='ID_Tipo',
         on_delete='CASCADE'
     )

@@ -2,7 +2,7 @@ import streamlit as st
 import logging
 from typing import List, Optional
 from datetime import datetime
-
+import time
 from model.base import get_database, initialize_database, database_connection
 from model.frecuencia import Frecuencia
 from model.tipo import Tipo
@@ -116,29 +116,82 @@ def obtener_parametros_canal(canal: Canal, configuracion: Configuracion) -> dict
                 'Link': False
         }
 
-# Función para guardar configuraciones en la base de datos
-def guardar_cambios(configuracion, nueva_frecuencia, entrada_dispositivos, canal_fuentes):
+def guardar_cambios(configuracion: Configuracion, frecuencia: Frecuencia, entradas_data: dict, canales_data: dict) -> bool:
+    """
+    Guarda los cambios realizados en la configuración.
+    
+    Args:
+        configuracion: Configuración actual
+        frecuencia: Nueva frecuencia seleccionada
+        entradas_data: Diccionario con los cambios en las entradas
+        canales_data: Diccionario con los cambios en los canales
+    """
     try:
-        # Actualizar frecuencia
-        configuracion.interfaz_audio.frecuencia = nueva_frecuencia
-        configuracion.interfaz_audio.save()
-        
-        # Actualizar dispositivos en entradas
-        for entrada, dispositivo in entrada_dispositivos.items():
-            entrada.set_dispositivo_configuracion(configuracion.id, dispositivo)
+        with database_connection():
+            # 1. Actualizar la frecuencia de la interfaz
+            interfaz = configuracion.get_interfaz()
+            if interfaz:
+                InterfazFrecuencia.delete().where(
+                    InterfazFrecuencia.interfaz == interfaz
+                ).execute()
+                InterfazFrecuencia.create(
+                    interfaz=interfaz,
+                    frecuencia=frecuencia
+                )
 
-        # Actualizar fuentes y parámetros en canales
-        for canal, fuente_tipo in canal_fuentes.items():
-            canal.set_fuente(fuente_tipo["fuente"])
-            canal.save() # Guarda otros parámetros
+            # 2. Actualizar dispositivos en entradas
+            for entrada_id, dispositivo_id in entradas_data.items():
+                entrada = Entrada.get_by_id(entrada_id)
+                if entrada:
+                    entrada.set_dispositivo_configuracion(
+                        configuracion.id_configuracion,
+                        dispositivo_id
+                    )
 
-        st.success("Cambios guardados exitosamente")
+            # 3. Actualizar parámetros de canales
+            for canal_id, params in canales_data.items():
+                canal = Canal.get_by_id(canal_id)
+                if canal:
+                    # Actualizar fuente si se especificó
+                    if 'fuente_id' in params:
+                        Establece.update(
+                            fuente=params['fuente_id']
+                        ).where(
+                            (Establece.canal == canal) &
+                            (Establece.configuracion == configuracion)
+                        ).execute()
+                    
+                    # Actualizar parámetros del canal
+                    Establece.update({
+                        Establece.volumen: params.get('volumen', 0),
+                        Establece.solo: params.get('solo', False),
+                        Establece.mute: params.get('mute', False),
+                        Establece.link: params.get('link', False)
+                    }).where(
+                        (Establece.canal == canal) &
+                        (Establece.configuracion == configuracion)
+                    ).execute()
+
+            return True
     except Exception as e:
-        st.error("Error al guardar cambios")
-
-
-
-
+        logger.error(f"Error al guardar cambios: {e}")
+        return False
+    
+def get_nombre_fuente(fuente):
+    """
+    Obtiene el nombre formateado de una fuente.
+    """
+    if not fuente:
+        return "Sin fuente"
+    try:
+        with database_connection():
+            tipo = fuente.get_tipo()
+            if tipo and hasattr(tipo, 'nombre'):
+                return tipo.nombre
+            return "Fuente sin tipo"
+    except Exception as e:
+        logger.error(f"Error al obtener nombre de fuente: {e}")
+        return "Error al obtener tipo"
 
 def main():
     # Inyectar CSS personalizado
@@ -195,6 +248,10 @@ def main():
             # Dividir en columnas
             col1, col2 = st.columns(2)
 
+            # Almacenar los cambios realizados
+            cambios_entradas = {}
+            cambios_canales = {}
+
             # Columna de Entradas
             with col1:
                 st.subheader('Entradas')
@@ -209,7 +266,7 @@ def main():
                     
                     dispositivos = list(Dispositivo.select())
                     dispositivo_actual = entrada.get_dispositivo_configuracion(configuracion.id)
-                    st.selectbox(
+                    dispositivo_seleccionado = st.selectbox(
                         'Dispositivo:',
                         options=dispositivos,
                         index=dispositivos.index(dispositivo_actual) if dispositivo_actual in dispositivos else 0,
@@ -217,12 +274,18 @@ def main():
                         key=f'dispositivo_{entrada.id_entrada}'
                     )
 
+                    # Guardar cambio
+                    cambios_entradas[entrada.id_entrada] = dispositivo_seleccionado.id_dispositivo
+
             # Columna de Canales
             with col2:
                 st.subheader('Canales')
                 for canal in canales:
                     with database_connection():
                         parametros = obtener_parametros_canal(canal, configuracion)
+                        # fuentes = list(Fuente.select())
+                        # fuente_actual = canal.get_fuente()
+                        # tipos = list(Tipo.select())
                     
                     st.markdown(f"""
                     <div class="custom-card">
@@ -232,43 +295,82 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
 
-                    fuentes = list(Fuente.select())
-                    fuente_actual = canal.get_fuente()
-                    fuente = st.selectbox(
+                    with database_connection():
+                        fuentes = list(Fuente.select())
+                        fuente_actual = canal.get_fuente()
+
+                        # Obtener tipo actual si existe
+                        tipo_actual = None
+                        if fuente_actual:
+                            tipo_actual = fuente_actual.get_tipo()
+
+                        tipos = list(Tipo.select())
+
+                    # Selector de tipo
+                    tipo_seleccionado = st.selectbox(
                         'Tipo:',
-                        options=fuentes,
-                        index=fuentes.index(fuente_actual) if fuente_actual in fuentes else 0,
-                        format_func=lambda x: x.get_tipo() if x.get_tipo() else "Sin tipo",
+                        options=tipos,
+                        index=tipos.index(tipo_actual) if tipo_actual in tipos else 0,
+                        format_func=lambda x: f"{x.id_tipo}" if x else "Sin tipo",  # Modificado para mostrar el ID
                         key=f'tipo_{canal.codigo_canal}'
                     )
 
-                    if fuente:
-                        tipos = list(Tipo.select())
-                        tipo_actual = fuente.get_tipo()
-                        st.selectbox(
-                            'Fuente:',
-                            options=tipos,
-                            index=tipos.index(tipo_actual) if tipo_actual in tipos else 0,
-                            format_func=lambda x: x.nombre,
-                            key=f'fuente_{canal.codigo_canal}'
-                        )
+                    # Filtrar fuentes por tipo seleccionado
+                    with database_connection():
+                        fuentes_filtradas = [
+                            f for f in fuentes 
+                            if f.get_tipo() and tipo_seleccionado and f.get_tipo().id_tipo == tipo_seleccionado.id_tipo
+                        ]
+
+                    # Si no hay fuentes filtradas, mostrar opción vacía
+                    if not fuentes_filtradas:
+                        fuentes_filtradas = [None]
+                        fuente_actual = None
+
+                    fuente_seleccionada = st.selectbox(
+                        'Fuente:',
+                        options=fuentes_filtradas,
+                        index=fuentes_filtradas.index(fuente_actual) if fuente_actual in fuentes_filtradas else 0,
+                        format_func=lambda x: get_nombre_fuente(x) if x else "Sin fuente",
+                        key=f'fuente_{canal.codigo_canal}'
+                    )
 
                     volumen_inicial = int(parametros['Volumen']) if isinstance(parametros['Volumen'], (int, float)) else 0
-                    st.slider(
+                    volumen = st.slider(
                         'Volumen:',
                         0, 100,
-                        volumen_inicial,
+                        int(parametros['Volumen']),
                         1,
                         key=f'volumen_{canal.codigo_canal}'
                     )
 
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.checkbox('Solo', parametros['Solo'], key=f'solo_{canal.codigo_canal}')
+                        solo = st.checkbox('Solo', parametros['Solo'], key=f'solo_{canal.codigo_canal}')
                     with col2:
-                        st.checkbox('Mute', parametros['Mute'], key=f'mute_{canal.codigo_canal}')
+                        mute = st.checkbox('Mute', parametros['Mute'], key=f'mute_{canal.codigo_canal}')
                     with col3:
-                        st.checkbox('Link', parametros['Link'], key=f'link_{canal.codigo_canal}')
+                        link = st.checkbox('Link', parametros['Link'], key=f'link_{canal.codigo_canal}')
+
+                    # Guardar cambios del canal
+                    cambios_canales[canal.codigo_canal] = {
+                        'fuente_id': fuente_seleccionada.id_fuente if fuente_seleccionada else None,
+                        'volumen': volumen,
+                        'solo': solo,
+                        'mute': mute,
+                        'link': link
+                    }
+
+            # Botón para guardar cambios
+            if st.button('Guardar Cambios'):
+                if guardar_cambios(configuracion, nueva_frecuencia, cambios_entradas, cambios_canales):
+                    st.success('Cambios guardados exitosamente')
+                    # Esperar un momento para que el usuario vea el mensaje
+                    time.sleep(1)
+                    # Actualizar el estado de la página sin recargarla
+                    st.session_state.update_needed = True
+                else:
+                    st.error('Error al guardar los cambios')
 
         else:
             st.info('Este usuario no tiene configuraciones.')

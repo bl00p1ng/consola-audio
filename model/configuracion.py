@@ -198,17 +198,20 @@ class Establece(BaseModel):
         Configuracion,
         backref='establece_set',
         column_name='ID_Configuracion',
+        field='id_configuracion',
         on_delete='CASCADE'
     )
     fuente = DeferredForeignKey(
         'Fuente',
         backref='establece_set',
+        field='id_fuente',
         column_name='ID_Fuente',
     )
     canal = DeferredForeignKey(
         'Canal',
         backref='establece_set',
         column_name='Codigo_Canal',
+        field='codigo_canal',
         on_delete='CASCADE'
     )
     volumen = FloatField(
