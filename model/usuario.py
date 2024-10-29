@@ -7,6 +7,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
 from model.base import BaseModel, database_proxy
+from model.configuracion import Configuracion
 
 class Usuario(BaseModel):
     """
@@ -131,7 +132,7 @@ class Usuario(BaseModel):
         Returns:
             List[Configuracion]: Lista de configuraciones del usuario
         """
-        from models.configuracion import Configuracion
+        # from models.configuracion import Configuracion
         return (Configuracion
                 .select()
                 .join(Personaliza)
