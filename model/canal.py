@@ -4,6 +4,7 @@ from datetime import datetime
 from peewee import (
     CharField,
     ForeignKeyField,
+    DeferredForeignKey,
     FloatField,
     IntegerField,
     BooleanField,
@@ -11,7 +12,7 @@ from peewee import (
 )
 
 from model.base import BaseModel
-from model.configuracion import Configuracion, Establece
+# from model.configuracion import Configuracion, Establece
 
 class Canal(BaseModel):
     """
@@ -39,12 +40,13 @@ class Canal(BaseModel):
         null=False,
         help_text="Etiqueta identificativa del canal"
     )
-    fuente = ForeignKeyField(
+    fuente = DeferredForeignKey(
         'Fuente',
         backref='canales',
         column_name='ID_Fuente',
         null=True,
         on_delete='SET NULL',
+        deferred_class='model.fuente.Fuente',
         help_text="Fuente de audio asociada al canal"
     )
 
@@ -94,6 +96,8 @@ class Canal(BaseModel):
         Returns:
             dict: Diccionario con los parámetros del canal
         """
+        from model.configuracion import Establece
+
         try:
             establece = (Establece
                         .select()
@@ -179,10 +183,12 @@ class Canal(BaseModel):
             List[Configuracion]: Lista de configuraciones asociadas
         """
         from model.configuracion import Configuracion
+        from model.usuario import Personaliza
+
         return (Configuracion
                 .select()
-                .join(Establece)
-                .where(Establece.canal == self))
+                .join(Personaliza)
+                .where(Personaliza.interfaz == self))
 
     def get_tipo_fuente(self) -> Optional[str]:
         """

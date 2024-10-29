@@ -4,14 +4,15 @@ from datetime import datetime
 from peewee import (
     CharField,
     ForeignKeyField,
+    DeferredForeignKey,
     IntegerField,
     DatabaseError,
     JOIN
 )
 
 from model.base import BaseModel
-from model.configuracion import Conectado, Configuracion
-from model.dispositivo import Dispositivo
+# from model.configuracion import Conectado, Configuracion
+# from model.dispositivo import Dispositivo
 from model.interfaz_audio import InterfazAudio
 
 class Entrada(BaseModel):
@@ -89,6 +90,7 @@ class Entrada(BaseModel):
         Returns:
             Optional[Dispositivo]: Dispositivo conectado o None si no hay ninguno
         """
+        from model.configuracion import Conectado
         try:
             conectado = (Conectado
                         .select()
@@ -163,7 +165,7 @@ class Entrada(BaseModel):
         Returns:
             List[Configuracion]: Lista de configuraciones que usan esta entrada
         """
-        from model.configuracion import Configuracion
+        from model.configuracion import Configuracion, Conectado
         return (Configuracion
                 .select()
                 .join(Conectado)
@@ -257,11 +259,12 @@ class Permite(BaseModel):
         column_name='ID_Entrada',
         on_delete='CASCADE'
     )
-    interfaz = ForeignKeyField(
+    interfaz = DeferredForeignKey(
         'InterfazAudio',
         backref='permite_set',
         column_name='ID_Interfaz',
-        on_delete='CASCADE'
+        on_delete='CASCADE',
+        deferred_class='model.interfaz_audio.InterfazAudio'
     )
 
     class Meta:

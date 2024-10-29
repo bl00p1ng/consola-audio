@@ -1,18 +1,25 @@
 from datetime import datetime
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from peewee import (
     DateTimeField, 
     ForeignKeyField, 
+    DeferredForeignKey,
     FloatField, 
     BooleanField,
     Model
 )
 
 from model.base import BaseModel
-from model.canal import Canal
-from model.entrada import Entrada
-from model.usuario import Usuario
+# from model.canal import Canal
+# from model.entrada import Entrada
+# from model.usuario import Usuario
+
+if TYPE_CHECKING:
+    from model.entrada import Entrada
+    from model.canal import Canal
+    from model.usuario import Usuario
+    from model.dispositivo import Dispositivo
 
 class Configuracion(BaseModel):
     """
@@ -48,7 +55,7 @@ class Configuracion(BaseModel):
             (('fecha',), False),  # Índice en fecha para búsquedas
         )
 
-    def get_usuario(self) -> Usuario:
+    def get_usuario(self):
         """
         Obtiene el usuario asociado a esta configuración.
         
@@ -82,6 +89,7 @@ class Configuracion(BaseModel):
         Returns:
             List[Canal]: Lista de canales con sus parámetros
         """
+        from model.canal import Canal
         return [establece.canal for establece in self.establece_set]
 
     def get_entradas(self) -> List['Entrada']:
@@ -164,11 +172,12 @@ class Establece(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    canal = ForeignKeyField(
+    canal = DeferredForeignKey(
         'Canal',
         backref='establece_set',
         column_name='Codigo_Canal',
-        on_delete='CASCADE'
+        on_delete='CASCADE',
+        deferred_class='model.canal.Canal'
     )
     volumen = FloatField(
         default=0.0,
@@ -210,17 +219,19 @@ class Conectado(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
-    dispositivo = ForeignKeyField(
+    dispositivo = DeferredForeignKey(
         'Dispositivo',
         backref='conectado_set',
         column_name='ID_Dispositivo',
-        on_delete='CASCADE'
+        on_delete='CASCADE',
+        deferred_class='model.dispositivo.Dispositivo'
     )
-    entrada = ForeignKeyField(
+    entrada = DeferredForeignKey(
         'Entrada',
         backref='conectado_set',
         column_name='ID_Entrada',
-        on_delete='CASCADE'
+        on_delete='CASCADE',
+        deferred_class='model.entrada.Entrada'
     )
 
     class Meta:
