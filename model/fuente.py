@@ -33,14 +33,6 @@ class Fuente(BaseModel):
         column_name='ID_Fuente',
         help_text="Identificador único de la fuente"
     )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
-    )
 
     class Meta:
         table_name = 'Fuente'
