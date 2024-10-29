@@ -1,2 +1,3 @@
-streamlit==1.38.0
-watchdog==3.20.2
+streamlit
+watchdog
+argon2-cffi
