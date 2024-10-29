@@ -200,13 +200,13 @@ class Personaliza(BaseModel):
         on_delete='CASCADE'
     )
     configuracion = ForeignKeyField(
-        'model.configuracion.Configuracion',
+        'Configuracion',
         backref='personalizaciones',
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
     interfaz = ForeignKeyField(
-        'model.interfaz_audio.InterfazAudio',
+        'InterfazAudio',
         backref='personalizaciones',
         column_name='ID_Interfaz',
         on_delete='CASCADE'

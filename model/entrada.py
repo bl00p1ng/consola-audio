@@ -259,12 +259,11 @@ class Permite(BaseModel):
         column_name='ID_Entrada',
         on_delete='CASCADE'
     )
-    interfaz = DeferredForeignKey(
+    interfaz = ForeignKeyField(
         'InterfazAudio',
         backref='permite_set',
         column_name='ID_Interfaz',
-        on_delete='CASCADE',
-        deferred_class='model.interfaz_audio.InterfazAudio'
+        on_delete='CASCADE'
     )
 
     class Meta:

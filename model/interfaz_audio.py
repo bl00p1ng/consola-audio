@@ -295,7 +295,7 @@ class InterfazFrecuencia(BaseModel):
         on_delete='CASCADE'
     )
     frecuencia = ForeignKeyField(
-        Frecuencia,
+        'Frecuencia',
         backref='interfaz_frecuencia_set',
         column_name='ID_Frecuencia',
         on_delete='CASCADE'

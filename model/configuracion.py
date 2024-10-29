@@ -174,7 +174,7 @@ class Establece(BaseModel):
         on_delete='CASCADE'
     )
     canal = ForeignKeyField(
-        'model.canal.Canal', 
+        'Canal',
         backref='establece_set',
         column_name='Codigo_Canal',
         on_delete='CASCADE'
@@ -220,13 +220,13 @@ class Conectado(BaseModel):
         on_delete='CASCADE'
     )
     dispositivo = ForeignKeyField(
-        'model.dispositivo.Dispositivo',  
+        'Dispositivo',
         backref='conectado_set',
         column_name='ID_Dispositivo',
         on_delete='CASCADE'
     )
     entrada = ForeignKeyField(
-        'model.entrada.Entrada', 
+        'Entrada',
         backref='conectado_set',
         column_name='ID_Entrada',
         on_delete='CASCADE'

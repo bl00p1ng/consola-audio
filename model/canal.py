@@ -41,7 +41,7 @@ class Canal(BaseModel):
         help_text="Etiqueta identificativa del canal"
     )
     fuente = ForeignKeyField(
-        'model.fuente.Fuente',
+        'Fuente',
         backref='canales',
         column_name='ID_Fuente',
         null=True,
