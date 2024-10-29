@@ -12,6 +12,7 @@ from peewee import (
 from model.base import BaseModel
 from model.configuracion import Conectado, Configuracion
 from model.dispositivo import Dispositivo
+from model.interfaz_audio import InterfazAudio
 
 class Entrada(BaseModel):
     """
