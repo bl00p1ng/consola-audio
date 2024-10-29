@@ -6,9 +6,6 @@ Este proyecto implementa una interfaz de usuario para una consola de audio utili
 - Andrés Felipe López Molina
 - Juan Sebastián Díaz Mas
 
-**NOTA:** POR TEMAS DE TIEMPO NO FUE POSIBLE TERMINAR LA IMPLEMENTACIÓN DE LA EDICIÓN DE DATOS, QUEDARON BUGS PENDIENTES POR RESOLVER
-EN ESA PARTE ASÍ QUE ESTA DESHABILITADA ESTA OPCIÓN.
-
 ## Requisitos Previos
 
 - Python 3.8 o superior
