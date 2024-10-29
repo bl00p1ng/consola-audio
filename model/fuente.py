@@ -11,6 +11,7 @@ from peewee import (
 from model.canal import Canal
 from model.interfaz_audio import InterfazAudio
 from model.base import BaseModel
+from model.tipo import Tipo
 
 class Fuente(BaseModel):
     """
