@@ -218,6 +218,12 @@ class Clasifica(BaseModel):
         fuente (ForeignKeyField): Referencia a la fuente
         tipo (ForeignKeyField): Referencia al tipo de fuente
     """
+
+    id_clasifica = IntegerField(
+        primary_key=True,
+        column_name='ID_Clasifica',
+        help_text="Identificador único de la clasificación"
+    )
     
     fuente = ForeignKeyField(
         Fuente,

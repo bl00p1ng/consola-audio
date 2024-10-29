@@ -199,6 +199,11 @@ class Establece(BaseModel):
         column_name='ID_Configuracion',
         on_delete='CASCADE'
     )
+    fuente = DeferredForeignKey(
+        'Fuente',
+        backref='establece_set',
+        column_name='ID_Fuente',
+    )
     canal = DeferredForeignKey(
         'Canal',
         backref='establece_set',

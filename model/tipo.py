@@ -45,14 +45,6 @@ class Tipo(BaseModel):
         null=True,
         help_text="Descripción detallada del tipo"
     )
-    created_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de creación"
-    )
-    updated_at = DateTimeField(
-        default=datetime.now,
-        help_text="Fecha y hora de última actualización"
-    )
 
     class Meta:
         table_name = 'Tipo'
@@ -221,6 +213,7 @@ class Tipo(BaseModel):
         Returns:
             List[Tipo]: Lista de tipos con fuentes asociadas
         """
+        from model.fuente import Clasifica
         return (cls
                 .select()
                 .join(Clasifica)

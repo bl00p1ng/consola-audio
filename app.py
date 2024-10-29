@@ -201,30 +201,32 @@ def main():
                         """, unsafe_allow_html=True)
 
                         fuentes = list(Fuente.select())
-                        fuente_actual = canal.fuente
+                        # obtener la fuente actual del canal
+                        fuente_actual = canal.get_fuente()
                         fuente = st.selectbox(
-                            'Fuente:',
+                            'Tipo:',
                             options=fuentes,
                             index=fuentes.index(fuente_actual) if fuente_actual in fuentes else 0,
-                            format_func=lambda x: x.get_tipo().nombre if x.get_tipo() else "Sin tipo",
-                            key=f'fuente_{canal.codigo_canal}'
+                            format_func=lambda x: x.get_tipo() if x.get_tipo() else "Sin tipo",
+                            key=f'tipo_{canal.codigo_canal}'
                         )
 
                         if fuente:
                             tipos = list(Tipo.select())
                             tipo_actual = fuente.get_tipo()
                             tipo = st.selectbox(
-                                'Tipo:',
+                                'Fuente:',
                                 options=tipos,
                                 index=tipos.index(tipo_actual) if tipo_actual in tipos else 0,
                                 format_func=lambda x: x.nombre,
-                                key=f'tipo_{canal.codigo_canal}'
+                                key=f'fuente_{canal.codigo_canal}'
                             )
 
+                        volumen_inicial = int(parametros['Volumen']) if isinstance(parametros['Volumen'], (int, float)) else 0
                         volumen = st.slider(
                             'Volumen:',
                             0, 100,
-                            parametros['Volumen'],
+                            volumen_inicial,
                             1,
                             key=f'volumen_{canal.codigo_canal}'
                         )

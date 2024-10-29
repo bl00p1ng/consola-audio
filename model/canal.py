@@ -77,6 +77,29 @@ class Canal(BaseModel):
             )
         except DatabaseError as e:
             raise DatabaseError(f"Error al crear el canal: {str(e)}")
+        
+    def get_fuente(self):
+        """
+        Obtiene la fuente asociada a este canal.
+        
+        Returns:
+            Optional[Fuente]: Fuente asociada al canal, o None si no tiene
+        """
+        from model.configuracion import Establece
+        # Obtener id de la fuente asociada
+        try:
+            establece = (Establece
+                        .select()
+                        .where(Establece.canal == self.codigo_canal)
+                        .get())
+            
+            # Obtener los datos completos de la fuente
+            from model.fuente import Fuente
+
+            return Fuente.get_by_id(establece.fuente)
+        except Establece.DoesNotExist:
+            return None
+
 
     def get_parametros_configuracion(self, configuracion_id: int) -> dict:
         """
