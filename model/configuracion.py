@@ -11,7 +11,7 @@ from peewee import (
     Model
 )
 
-from model.base import BaseModel
+from model.base import BaseModel, database_connection
 # from model.canal import Canal
 # from model.entrada import Entrada
 # from model.usuario import Usuario
@@ -97,10 +97,11 @@ class Configuracion(BaseModel):
         """
         from model.canal import Canal
         try:
-            return (Canal
-                   .select()
-                   .join(Establece, on=(Establece.canal == Canal.codigo_canal))
-                   .where(Establece.configuracion == self.id_configuracion))
+            with database_connection():
+                return list(Canal
+                    .select()
+                    .join(Establece, on=(Establece.canal == Canal.codigo_canal))
+                    .where(Establece.configuracion == self.id_configuracion))
         except Exception as e:
             print(f"Error al obtener canales: {e}")
             return []

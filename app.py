@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional
 from datetime import datetime
 
-from model.base import initialize_database, database_connection
+from model.base import get_database, initialize_database, database_connection
 from model.frecuencia import Frecuencia
 from model.tipo import Tipo
 from model.fuente import Fuente, Clasifica, Maneja
@@ -14,6 +14,8 @@ from model.canal import Canal
 from model.configuracion import Configuracion, Establece, Conectado
 from model.usuario import Usuario, Personaliza
 
+# Configuración de la página
+st.set_page_config(page_title="Consola de Audio", layout="wide")
 
 # Configurar logging
 logging.basicConfig(
@@ -22,11 +24,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-db = initialize_database()
-
+# Usar @st.cache_resource para mantener la conexión viva
 @st.cache_resource
-def obtener_db():
-    return initialize_database()
+def init_db():
+    """
+    Inicializa y retorna la conexión a la base de datos.
+    """
+    return get_database()
+
+# Inicializar la base de datos al inicio
+db = init_db()
 
 # Función para crear estilos personalizados
 def custom_css():
@@ -134,22 +141,15 @@ def guardar_cambios(configuracion, nueva_frecuencia, entrada_dispositivos, canal
 
 
 def main():
-    # Configuración de la página
-    st.set_page_config(page_title="Consola de Audio", layout="wide")
-
-    # Conectar a la base de datos si está cerrada
-    db = obtener_db()
-    if db.is_closed():
-        db.connect()
-
-
     # Inyectar CSS personalizado
     st.markdown(custom_css(), unsafe_allow_html=True)
 
     st.title('Consola de Audio')
 
     # Selección de usuario
-    usuarios = obtener_usuarios()  # Llama a la función fuera del contexto de Streamlit
+    with database_connection():
+        usuarios = list(obtener_usuarios())  # Convertir a lista para materializar la consulta
+
     usuario_seleccionado = st.selectbox(
         'Selecciona un usuario:',
         options=usuarios,
@@ -157,11 +157,17 @@ def main():
     )
 
     if usuario_seleccionado:
-        # Obtener la última configuración del usuario fuera de Streamlit
-        configuracion = obtener_configuracion_usuario(usuario_seleccionado)
+        # Obtener la última configuración del usuario
+        with database_connection():
+            configuracion = obtener_configuracion_usuario(usuario_seleccionado)
         
         if configuracion:
-            interfaz = configuracion.get_interfaz()
+            with database_connection():
+                interfaz = configuracion.get_interfaz()
+                
+               # Obtener entradas y canales y materializarlos en listas
+                entradas = list(configuracion.get_entradas())
+                canales = list(configuracion.get_canales())
             
             # Mostrar la interfaz de audio
             if interfaz:
@@ -192,7 +198,6 @@ def main():
             # Columna de Entradas
             with col1:
                 st.subheader('Entradas')
-                entradas = configuracion.get_entradas()  # Llama antes de Streamlit
                 for entrada in entradas:
                     st.markdown(f"""
                     <div class="custom-card">
@@ -215,9 +220,9 @@ def main():
             # Columna de Canales
             with col2:
                 st.subheader('Canales')
-                canales = configuracion.get_canales()  # Llama antes de Streamlit
                 for canal in canales:
-                    parametros = obtener_parametros_canal(canal, configuracion)
+                    with database_connection():
+                        parametros = obtener_parametros_canal(canal, configuracion)
                     
                     st.markdown(f"""
                     <div class="custom-card">

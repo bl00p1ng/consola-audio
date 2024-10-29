@@ -13,47 +13,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 database_proxy = DatabaseProxy()
+_database = None
 
-class BaseModel(Model):
+def get_database() -> SqliteDatabase:
     """
-    Modelo base para todos los modelos de la aplicación.
-    
-    Proporciona funcionalidad común y configuración para todos los modelos
-    que heredarán de esta clase. Utiliza el proxy de base de datos para
-    permitir la configuración dinámica de la conexión.
+    Obtiene la instancia de la base de datos, inicializándola si es necesario.
     """
-    
-    class Meta:
-        database = database_proxy
-    
-    @classmethod
-    def get_by_id_or_none(cls, id):
-        """
-        Obtiene un registro por su ID o retorna None si no existe.
-        
-        Args:
-            id: Identificador del registro a buscar.
-            
-        Returns:
-            Model or None: Instancia del modelo si se encuentra, None en caso contrario.
-        """
-        try:
-            return cls.get_by_id(id)
-        except cls.DoesNotExist:
-            return None
+    global _database
+    if _database is None:
+        _database = initialize_database()
+        database_proxy.initialize(_database)
+    return _database
 
 def initialize_database(db_path: str = 'db/Base_De_Datos.db') -> SqliteDatabase:
     """
     Inicializa la conexión a la base de datos SQLite.
-    
-    Args:
-        db_path (str): Ruta al archivo de la base de datos SQLite.
-        
-    Returns:
-        SqliteDatabase: Instancia de la base de datos configurada.
-        
-    Raises:
-        RuntimeError: Si hay un error al inicializar la base de datos.
     """
     try:
         # Asegurar que el directorio de la base de datos existe
@@ -64,9 +38,9 @@ def initialize_database(db_path: str = 'db/Base_De_Datos.db') -> SqliteDatabase:
         database = SqliteDatabase(
             db_path,
             pragmas={
-                'journal_mode': 'wal',  # Mejor concurrencia
-                'foreign_keys': 1,      # Habilitar claves foráneas
-                'cache_size': -1024 * 64  # 64MB de caché
+                'journal_mode': 'wal',
+                'foreign_keys': 1,
+                'cache_size': -1024 * 64
             }
         )
         
@@ -85,39 +59,23 @@ def database_connection() -> Generator[SqliteDatabase, None, None]:
     """
     Context manager para manejar la conexión a la base de datos.
     """
-    # Asegurarse de que `database_proxy` ha sido inicializado.
-    if not database_proxy.obj:
-        raise RuntimeError("Database proxy has not been initialized. Call initialize_database() first.")
-
-    database = database_proxy.obj
-    if database.is_closed():
+    database = get_database()
+    was_closed = database.is_closed()
+    
+    if was_closed:
         database.connect()
     
     try:
         yield database
     except Exception as e:
-        if not database.is_closed():
+        if not was_closed:
             database.rollback()
         logger.error(f"Error en la operación de base de datos: {e}")
         raise
     finally:
-        if not database.is_closed():
+        if was_closed and not database.is_closed():
             database.close()
 
-# def create_tables(models: list) -> None:
-#     """
-#     Crea las tablas en la base de datos para los modelos especificados.
-    
-#     Args:
-#         models (list): Lista de clases de modelos Peewee a crear.
-        
-#     Raises:
-#         RuntimeError: Si hay un error al crear las tablas.
-#     """
-#     try:
-#         with database_connection() as db:
-#             db.create_tables(models, safe=True)
-#             logger.info("Tablas creadas exitosamente")
-#     except Exception as e:
-#         logger.error(f"Error al crear las tablas: {e}")
-#         raise RuntimeError(f"No se pudieron crear las tablas: {e}")
+class BaseModel(Model):
+    class Meta:
+        database = database_proxy
